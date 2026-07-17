@@ -1,0 +1,22 @@
+[
+  {
+    "id": "seed-1",
+    "customer_name": "Cliente Exemplo",
+    "customer_email": "cliente@exemplo.com",
+    "customer_phone": "+244 923 000 000",
+    "customer_address": "Av. Exemplo, 123",
+    "items": [
+      {
+        "product_name": "Camiseta Básica",
+        "quantity": 1,
+        "price": 89.9
+      }
+    ],
+    "total": 89.9,
+    "status": "Pendente",
+    "payment_method": "Reserva na Loja",
+    "notes": "",
+    "created_at": "2026-07-15T10:41:57.080Z",
+    "updated_at": "2026-07-15T10:41:57.081Z"
+  }
+]

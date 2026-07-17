@@ -1,0 +1,248 @@
+/* Google Fonts — Inter + Playfair Display (fashion) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap');
+
+@import "tailwindcss";
+
+/* ========== Ada Fashion Custom Styles ========== */
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --color-brand-rose: #fb7185;
+  --color-brand-rose-dark: #f43f5e;
+  --color-brand-rose-light: #fda4af;
+  --color-brand-white: #ffffff;
+  --color-brand-red: #dc2626;
+  --color-accent-gold: #d4a574;
+  --color-accent-gold-light: #e8c9a0;
+}
+
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fashion heading font */
+.font-fashion {
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #fdf2f8;
+}
+::-webkit-scrollbar-thumb {
+  background: #f9a8d4;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ec4899;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+/* Stagger children animation */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* Product card hover effect */
+.product-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(251, 113, 133, 0.15);
+}
+.product-card .product-image {
+  transition: transform 0.5s ease;
+}
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+.modal-content {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Toast notification */
+.toast-enter {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Admin sidebar active state */
+.sidebar-link {
+  transition: all 0.2s ease;
+}
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.sidebar-link.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-left: 3px solid white;
+}
+
+/* Print styles — Only show the data table with a clean report header */
+@media print {
+  /* Hide absolutely everything by default */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the printable area */
+  .print-area, .print-area * {
+    visibility: visible !important;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white !important;
+    padding: 20px !important;
+  }
+
+  /* Print header — visible only in print */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #fb7185;
+  }
+  .print-header h1 {
+    font-size: 22px;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+  }
+  .print-header p {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  /* Hide ALL system chrome */
+  .print-hide,
+  nav, aside, header, footer,
+  .sidebar-link,
+  button, select,
+  [class*="StatsCard"],
+  [class*="BarChart"],
+  [class*="PieChart"],
+  [class*="ResponsiveContainer"] {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Make table look great in print */
+  .print-area table {
+    width: 100% !important;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .print-area th {
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 8px 10px !important;
+    font-weight: 600;
+    text-align: left;
+  }
+  .print-area td {
+    border-bottom: 1px solid #f3f4f6;
+    padding: 6px 10px !important;
+  }
+  .print-area tr:nth-child(even) {
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Remove rounded corners and shadows */
+  .print-area * {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Ensure the admin layout doesn't offset */
+  .lg\:ml-64 {
+    margin-left: 0 !important;
+  }
+}
