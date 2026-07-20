@@ -1,7 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { pool } = require('./db');
+const serverless = require('serverless-http');
+
+const { pool } = process.env.VERCEL || process.env.NODE_ENV === 'production'
+  ? require('./db-infinity')
+  : require('./db');
 
 const app = express();
 app.use(cors());
@@ -1163,17 +1167,21 @@ const seedDefaultData = async () => {
 
 const PORT = process.env.PORT || 4000;
 
-(async () => {
+const startServer = async () => {
   try {
     await ensureSchema();
     await seedDefaultData();
-   app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server', error);
     process.exit(1);
   }
-})();
+};
 
-module.exports = app;
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = serverless(app);
