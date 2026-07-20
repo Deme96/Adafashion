@@ -1167,8 +1167,8 @@ const PORT = process.env.PORT || 4000;
   try {
     await ensureSchema();
     await seedDefaultData();
-    app.listen(PORT, () => {
-      console.log(`AdaFashion API running on http://localhost:${PORT}`);
+   app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server', error);
