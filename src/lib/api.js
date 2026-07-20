@@ -1,9 +1,30 @@
 // ========== Ada Fashion API Data Layer ==========
 // Wraps all backend API calls with localStorage fallback for seeding
 
-import { notify } from './notifications';
+import { notify } from './notifications.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const normalizeApiBaseUrl = (value) => {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, '');
+  return withoutTrailingSlash.endsWith('/api') ? withoutTrailingSlash : `${withoutTrailingSlash}/api`;
+};
+
+export const getApiBaseUrl = () => {
+  const envUrl = normalizeApiBaseUrl(import.meta?.env?.VITE_API_URL);
+  if (envUrl) return envUrl;
+
+  if (typeof window !== 'undefined' && window.location) {
+    const protocol = window.location.protocol || 'http:';
+    const hostname = window.location.hostname || 'localhost';
+    return `${protocol}//${hostname}:4000/api`;
+  }
+
+  return 'http://localhost:4000/api';
+};
+
+const API_BASE = getApiBaseUrl();
 
 const getSuccessMessage = (method, endpoint) => {
   const base = endpoint.replace('/api', '').replace(/^\//, '') || 'recurso';

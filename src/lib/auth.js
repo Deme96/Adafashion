@@ -1,5 +1,7 @@
 // ========== Ada Fashion Authentication Logic ==========
 
+import { getApiBaseUrl } from './api.js';
+
 const TOKEN_KEY = 'adafashion_admin_token';
 const ADMIN_EMAIL = 'admin@adafashion.com';
 const ADMIN_PASS = 'admin123';
@@ -47,7 +49,7 @@ const getStoredUser = () => {
 
 export const login = async (email, password) => {
   try {
-    const response = await fetch('http://localhost:4000/api/auth/login', {
+    const response = await fetch(`${getApiBaseUrl()}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),

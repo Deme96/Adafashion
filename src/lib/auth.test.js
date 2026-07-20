@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeRole, getRolePermissions, hasAccess } from './auth.js';
+import { getApiBaseUrl } from './api.js';
 
 const storage = new Map();
 const localStorageMock = {
@@ -31,6 +32,12 @@ test('role permissions restrict menus to the assigned role', () => {
   assert.deepEqual(getRolePermissions('Admin').filter((item) => item === 'settings'), ['settings']);
   assert.deepEqual(getRolePermissions('Vendedor'), ['dashboard', 'sales', 'reservations']);
   assert.deepEqual(getRolePermissions('Visualizador'), ['dashboard', 'inventory', 'purchases', 'sales', 'reservations', 'finances']);
+});
+
+test('getApiBaseUrl uses the current host for external device access', () => {
+  global.window = { location: { protocol: 'http:', hostname: '192.168.1.50' } };
+  assert.equal(getApiBaseUrl(), 'http://192.168.1.50:4000/api');
+  delete global.window;
 });
 
 test('hasAccess respects the logged user role', () => {

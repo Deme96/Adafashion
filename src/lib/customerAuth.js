@@ -1,6 +1,8 @@
 // ========== Ada Fashion Customer Auth ==========
 // Handles customer registration and login via backend MySQL API
 
+import { getApiBaseUrl } from './api.js';
+
 const CUSTOMER_TOKEN_KEY = 'adafashion_customer_token';
 
 const saveCustomerToken = (customer) => {
@@ -11,7 +13,7 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 export const registerCustomer = async (name, email, phone, password, account_type = 'normal') => {
   try {
-    const response = await fetch('http://localhost:4000/api/customers/register', {
+    const response = await fetch(`${getApiBaseUrl()}/customers/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email: normalizeEmail(email), phone, password, account_type }),
@@ -31,7 +33,7 @@ export const registerCustomer = async (name, email, phone, password, account_typ
 
 export const loginCustomer = async (email, password) => {
   try {
-    const response = await fetch('http://localhost:4000/api/customers/login', {
+    const response = await fetch(`${getApiBaseUrl()}/customers/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: normalizeEmail(email), password }),
