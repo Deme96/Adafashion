@@ -1005,41 +1005,88 @@ app.post('/api/auth/login', async (req, res) => {
     const fallbackAdmin = normalizedEmail === ADMIN_EMAIL.toLowerCase() && String(password || '').trim() === ADMIN_PASSWORD;
 
     let userRow = null;
+    let dbAvailable = true;
+
     try {
       const [rows] = await pool.query('SELECT id, full_name AS name, email, role, password_hash FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
-      userRow = rows[0];
+      userRow = rows && rows[0] ? rows[0] : null;
     } catch (dbError) {
-      console.error('Database auth lookup failed', dbError);
+      console.error('Database auth lookup failed', dbError.message);
+      dbAvailable = false;
+
+      // Fallback: If admin credentials match and database is unavailable, allow login
       if (fallbackAdmin) {
-        return res.json({ success: true, user: { id: 1, name: ADMIN_FULL_NAME, email: normalizedEmail, role: 'Admin' } });
+        console.log('Using fallback admin authentication (database unavailable)');
+        return res.json({
+          success: true,
+          user: {
+            id: 1,
+            name: ADMIN_FULL_NAME,
+            email: normalizedEmail,
+            role: 'Admin',
+          },
+        });
       }
-      return res.status(503).json({ success: false, message: 'Serviço temporariamente indisponível' });
+
+      return res.status(503).json({
+        success: false,
+        message: 'Serviço de autenticação temporariamente indisponível. Verifique a configuração do banco de dados.',
+      });
     }
 
     const directMatch = userRow && String(userRow.password_hash || '').trim() === String(password || '').trim();
 
     if (directMatch || fallbackAdmin) {
-      if (userRow && fallbackAdmin && String(userRow.password_hash || '').trim() !== ADMIN_PASSWORD) {
-        await pool.query('UPDATE users SET password_hash = ? WHERE email = ?', [ADMIN_PASSWORD, email]);
+      // Try to update/create user in database if available
+      if (dbAvailable && userRow && fallbackAdmin && String(userRow.password_hash || '').trim() !== ADMIN_PASSWORD) {
+        try {
+          await pool.query('UPDATE users SET password_hash = ? WHERE email = ?', [ADMIN_PASSWORD, email]);
+        } catch (error) {
+          console.error('Failed to update admin password', error.message);
+        }
       }
 
-      if (!userRow) {
-        await pool.query(
-          'INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-          [ADMIN_FULL_NAME, normalizedEmail, ADMIN_PASSWORD, 'Admin', 'active']
-        );
+      if (dbAvailable && !userRow) {
+        try {
+          await pool.query(
+            'INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+            [ADMIN_FULL_NAME, normalizedEmail, ADMIN_PASSWORD, 'Admin', 'active']
+          );
+        } catch (error) {
+          console.error('Failed to create admin user', error.message);
+        }
       }
 
       const role = normalizeUserRole(userRow?.role || 'Admin');
-      const user = userRow || { id: 1, name: ADMIN_FULL_NAME, email: normalizedEmail, role: 'Admin' };
-      res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role } });
+      const user = userRow || {
+        id: 1,
+        name: ADMIN_FULL_NAME,
+        email: normalizedEmail,
+        role: 'Admin',
+      };
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role,
+        },
+      });
       return;
     }
 
-    res.status(401).json({ success: false, message: 'Credenciais inválidas' });
+    res.status(401).json({
+      success: false,
+      message: 'Credenciais inválidas',
+    });
   } catch (error) {
     console.error('Error authenticating', error);
-    res.status(500).json({ message: 'Failed to authenticate' });
+    res.status(500).json({
+      success: false,
+      message: 'Falha ao processar autenticação',
+    });
   }
 });
 

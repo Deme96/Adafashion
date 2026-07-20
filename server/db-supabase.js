@@ -7,7 +7,7 @@ const createSupabasePool = () => {
     return null;
   }
 
-  const pool = new Pool({
+  const pgPool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
     max: 5,
@@ -30,18 +30,17 @@ const createSupabasePool = () => {
 
   const shouldAppendReturningId = (text) => /^\s*INSERT\b/i.test(text) && !/\bRETURNING\b/i.test(text);
 
-  pool.query = async (text, params = []) => {
-    const normalizedText = translateQuery(text, params);
-    const queryText = shouldAppendReturningId(normalizedText)
-      ? `${normalizedText} RETURNING id`
-      : normalizedText;
-
-    const client = await pool.connect();
+  const queryWrapper = async (text, params = []) => {
     try {
-      const result = await client.query(queryText, params);
+      const normalizedText = translateQuery(text, params);
+      const queryText = shouldAppendReturningId(normalizedText)
+        ? `${normalizedText} RETURNING id`
+        : normalizedText;
+
+      const result = await pgPool.query(queryText, params);
 
       if (shouldReturnRows(text)) {
-        return [result.rows];
+        return [result.rows || []];
       }
 
       return [{
@@ -49,14 +48,15 @@ const createSupabasePool = () => {
         affectedRows: result.rowCount ?? 0,
         rowCount: result.rowCount ?? 0,
         rows: result.rows || [],
-        ...result,
       }];
-    } finally {
-      client.release();
+    } catch (error) {
+      console.error(`Supabase query error: ${error.message}`, { text, params });
+      throw error;
     }
   };
 
-  return pool;
+  pgPool.query = queryWrapper;
+  return pgPool;
 };
 
 const pool = createSupabasePool();

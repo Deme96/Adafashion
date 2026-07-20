@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "seed": "node init-db.js"
+    "seed": "node init-db.js",
+    "test-admin": "node test-admin.js",
+    "test-login": "node test-login.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
