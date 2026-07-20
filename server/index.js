@@ -7,12 +7,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-});
-
 const sanitizeValue = (value, maxLength = 1200) => {
   if (value === null || value === undefined) return null;
   if (typeof value === 'string') {
