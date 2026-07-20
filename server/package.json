@@ -2,6 +2,7 @@
   "name": "adafashion-server",
   "version": "0.1.0",
   "main": "index.js",
+  "type": "commonjs",
   "license": "MIT",
   "scripts": {
     "start": "node index.js",
