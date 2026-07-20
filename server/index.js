@@ -3,12 +3,28 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const serverless = require('serverless-http');
 
-const { pool } = process.env.VERCEL || process.env.NODE_ENV === 'production'
+const dbModule = process.env.VERCEL || process.env.NODE_ENV === 'production'
   ? require('./db-infinity')
   : require('./db');
 
+const { pool, ADMIN_CREDENTIALS } = dbModule;
+
+// Admin credentials com fallback
+const ADMIN_EMAIL = ADMIN_CREDENTIALS?.email || 'admin@adafashion.com';
+const ADMIN_PASSWORD = ADMIN_CREDENTIALS?.password || 'admin123';
+const ADMIN_FULL_NAME = ADMIN_CREDENTIALS?.fullName || 'Administrador AdaFashion';
+
 const app = express();
-app.use(cors());
+
+// Configurar CORS para permitir acesso de dispositivos externos
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-user'],
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 const sanitizeValue = (value, maxLength = 1200) => {
@@ -881,26 +897,36 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const normalizedEmail = normalizeEmail(email);
-    const [rows] = await pool.query('SELECT id, full_name AS name, email, role, password_hash FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+    const fallbackAdmin = normalizedEmail === ADMIN_EMAIL.toLowerCase() && String(password || '').trim() === ADMIN_PASSWORD;
 
-    const userRow = rows[0];
+    let userRow = null;
+    try {
+      const [rows] = await pool.query('SELECT id, full_name AS name, email, role, password_hash FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+      userRow = rows[0];
+    } catch (dbError) {
+      console.error('Database auth lookup failed', dbError);
+      if (fallbackAdmin) {
+        return res.json({ success: true, user: { id: 1, name: ADMIN_FULL_NAME, email: normalizedEmail, role: 'Admin' } });
+      }
+      return res.status(503).json({ success: false, message: 'Serviço temporariamente indisponível' });
+    }
+
     const directMatch = userRow && String(userRow.password_hash || '').trim() === String(password || '').trim();
-    const adminFallback = normalizedEmail === 'admin@adafashion.com' && password === 'admin123';
 
-    if (directMatch || adminFallback) {
-      if (userRow && adminFallback && String(userRow.password_hash || '').trim() !== 'admin123') {
-        await pool.query('UPDATE users SET password_hash = ? WHERE email = ?', ['admin123', email]);
+    if (directMatch || fallbackAdmin) {
+      if (userRow && fallbackAdmin && String(userRow.password_hash || '').trim() !== ADMIN_PASSWORD) {
+        await pool.query('UPDATE users SET password_hash = ? WHERE email = ?', [ADMIN_PASSWORD, email]);
       }
 
       if (!userRow) {
         await pool.query(
           'INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-          ['Administrador AdaFashion', normalizedEmail, 'admin123', 'Admin', 'active']
+          [ADMIN_FULL_NAME, normalizedEmail, ADMIN_PASSWORD, 'Admin', 'active']
         );
       }
 
       const role = normalizeUserRole(userRow?.role || 'Admin');
-      const user = userRow || { id: 1, name: 'Administrador AdaFashion', email: normalizedEmail, role: 'Admin' };
+      const user = userRow || { id: 1, name: ADMIN_FULL_NAME, email: normalizedEmail, role: 'Admin' };
       res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role } });
       return;
     }
@@ -967,17 +993,17 @@ app.post('/api/customers/login', async (req, res) => {
 
 const seedDefaultData = async () => {
   // ── Always ensure admin user exists with correct credentials ──
-  const [adminRows] = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(email)) = ?', ['admin@adafashion.com']);
+  const [adminRows] = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(email)) = ?', [ADMIN_EMAIL.toLowerCase()]);
   if (adminRows.length === 0) {
     await pool.query(
       'INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
-      ['Administrador AdaFashion', 'admin@adafashion.com', 'admin123', 'Admin', 'active']
+      [ADMIN_FULL_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, 'Admin', 'active']
     );
     console.log('Admin user created.');
   } else {
     await pool.query(
       'UPDATE users SET password_hash = ?, role = ?, status = ? WHERE LOWER(TRIM(email)) = ?',
-      ['admin123', 'Admin', 'active', 'admin@adafashion.com']
+      [ADMIN_PASSWORD, 'Admin', 'active', ADMIN_EMAIL.toLowerCase()]
     );
     console.log('Admin user credentials reset.');
   }
@@ -1167,10 +1193,39 @@ const seedDefaultData = async () => {
 
 const PORT = process.env.PORT || 4000;
 
+let initializationPromise = null;
+
+const initializeApp = async () => {
+  if (initializationPromise) return initializationPromise;
+
+  initializationPromise = (async () => {
+    try {
+      await ensureSchema();
+      await seedDefaultData();
+    } catch (error) {
+      console.error('Failed to initialize app data', error);
+    }
+  })();
+
+  return initializationPromise;
+};
+
+app.use(async (req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    return next();
+  }
+
+  try {
+    await initializeApp();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 const startServer = async () => {
   try {
-    await ensureSchema();
-    await seedDefaultData();
+    await initializeApp();
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Servidor rodando na porta ${PORT}`);
     });
