@@ -3,9 +3,13 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const serverless = require('serverless-http');
 
-const dbModule = process.env.VERCEL || process.env.NODE_ENV === 'production'
-  ? require('./db-infinity')
-  : require('./db');
+const useSupabase = Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL);
+
+const dbModule = useSupabase
+  ? require('./db-supabase')
+  : (process.env.VERCEL || process.env.NODE_ENV === 'production'
+    ? require('./db-infinity')
+    : require('./db'));
 
 const { pool, ADMIN_CREDENTIALS } = dbModule;
 
@@ -180,94 +184,195 @@ const normalizeUserRole = (role) => {
 };
 
 const ensureColumn = async (table, column, definition) => {
-  const [rows] = await pool.query(`SHOW COLUMNS FROM \`${table}\` LIKE ?`, [column]);
-  if (rows.length === 0) {
-    await pool.query(`ALTER TABLE \`${table}\` ADD COLUMN ${definition}`);
+  const [rows] = await pool.query(
+    `SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = $1 AND column_name = $2`,
+    [table, column]
+  );
+
+  if (!rows || rows.length === 0) {
+    await pool.query(`ALTER TABLE "${table}" ADD COLUMN ${definition}`);
   }
 };
 
 const ensureSchema = async () => {
+  await pool.query(`CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'Admin',
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS customers (
+    id BIGSERIAL PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    phone VARCHAR(30) DEFAULT NULL,
+    address TEXT DEFAULT NULL,
+    password_hash VARCHAR(255) DEFAULT NULL,
+    account_type VARCHAR(30) NOT NULL DEFAULT 'normal',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS products (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    slug VARCHAR(150) NOT NULL UNIQUE,
+    description TEXT DEFAULT NULL,
+    price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    wholesale_price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    stock INT NOT NULL DEFAULT 0,
+    category VARCHAR(100) DEFAULT NULL,
+    image_url VARCHAR(255) DEFAULT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    sale_price NUMERIC(10,2) DEFAULT NULL,
+    status_geral VARCHAR(50) DEFAULT NULL,
+    colors TEXT DEFAULT NULL,
+    sizes TEXT DEFAULT NULL,
+    images TEXT DEFAULT NULL,
+    wholesale_min_qty INT NOT NULL DEFAULT 0,
+    unit_price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    purchase_quantity INT NOT NULL DEFAULT 0,
+    total_cost NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    supplier VARCHAR(150) DEFAULT NULL,
+    is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS orders (
+    id BIGSERIAL PRIMARY KEY,
+    customer_id BIGINT REFERENCES customers(id) ON DELETE SET NULL,
+    order_number VARCHAR(50) NOT NULL UNIQUE,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    payment_method VARCHAR(50) DEFAULT NULL,
+    payment_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+    subtotal NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    discount NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    total NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    notes TEXT DEFAULT NULL,
+    customer_name VARCHAR(150) DEFAULT NULL,
+    customer_email VARCHAR(150) DEFAULT NULL,
+    customer_phone VARCHAR(30) DEFAULT NULL,
+    customer_address TEXT DEFAULT NULL,
+    transaction_id VARCHAR(100) DEFAULT NULL,
+    items TEXT DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS order_items (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    product_id BIGINT REFERENCES products(id) ON DELETE SET NULL,
+    product_name VARCHAR(150) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    unit_price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    total_price NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
   await pool.query(`CREATE TABLE IF NOT EXISTS promotions (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     description TEXT DEFAULT NULL,
-    discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    discount_percent NUMERIC(5,2) NOT NULL DEFAULT 0.00,
     start_date DATE DEFAULT NULL,
     end_date DATE DEFAULT NULL,
-    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     applicable_categories TEXT DEFAULT NULL,
     selected_products TEXT DEFAULT NULL,
     banner_image TEXT DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS news (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     content TEXT DEFAULT NULL,
     image TEXT DEFAULT NULL,
-    is_published TINYINT(1) NOT NULL DEFAULT 1,
+    is_published BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS videos (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     url TEXT DEFAULT NULL,
-    is_published TINYINT(1) NOT NULL DEFAULT 1,
+    is_published BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS carousel_photos (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     image_url TEXT DEFAULT NULL,
     description TEXT DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS store_settings (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     store_name VARCHAR(150) DEFAULT 'Ada Fashion',
     language VARCHAR(10) DEFAULT 'pt-BR',
     currency VARCHAR(10) DEFAULT 'XOF',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 
   await pool.query(`CREATE TABLE IF NOT EXISTS activity_logs (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id BIGSERIAL PRIMARY KEY,
     action VARCHAR(150) NOT NULL,
     details TEXT DEFAULT NULL,
     user_name VARCHAR(150) DEFAULT NULL,
     entity_type VARCHAR(100) DEFAULT NULL,
     entity_id VARCHAR(100) DEFAULT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
 
-  await ensureColumn('products', 'sale_price', 'sale_price DECIMAL(10,2) DEFAULT NULL');
+  await pool.query(`CREATE TABLE IF NOT EXISTS reservations (
+    id BIGSERIAL PRIMARY KEY,
+    customer_name VARCHAR(150) NOT NULL,
+    customer_phone VARCHAR(30) DEFAULT NULL,
+    customer_email VARCHAR(150) DEFAULT NULL,
+    reservation_date DATE NOT NULL,
+    notes TEXT DEFAULT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS stock_movements (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    movement_type VARCHAR(20) NOT NULL,
+    quantity INT NOT NULL,
+    reason VARCHAR(150) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );`);
+
+  await ensureColumn('products', 'sale_price', 'sale_price NUMERIC(10,2) DEFAULT NULL');
   await ensureColumn('products', 'status_geral', 'status_geral VARCHAR(50) DEFAULT NULL');
   await ensureColumn('products', 'colors', 'colors TEXT DEFAULT NULL');
   await ensureColumn('products', 'sizes', 'sizes TEXT DEFAULT NULL');
   await ensureColumn('products', 'images', 'images TEXT DEFAULT NULL');
   await ensureColumn('products', 'wholesale_min_qty', 'wholesale_min_qty INT NOT NULL DEFAULT 0');
-  await ensureColumn('products', 'unit_price', 'unit_price DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+  await ensureColumn('products', 'unit_price', 'unit_price NUMERIC(10,2) NOT NULL DEFAULT 0.00');
   await ensureColumn('products', 'purchase_quantity', 'purchase_quantity INT NOT NULL DEFAULT 0');
-  await ensureColumn('products', 'total_cost', 'total_cost DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+  await ensureColumn('products', 'total_cost', 'total_cost NUMERIC(10,2) NOT NULL DEFAULT 0.00');
   await ensureColumn('products', 'supplier', 'supplier VARCHAR(150) DEFAULT NULL');
-  await ensureColumn('products', 'is_featured', 'is_featured TINYINT(1) NOT NULL DEFAULT 0');
+  await ensureColumn('products', 'is_featured', 'is_featured BOOLEAN NOT NULL DEFAULT FALSE');
 
-  await pool.query(`ALTER TABLE users MODIFY COLUMN role VARCHAR(50) NOT NULL DEFAULT 'Admin'`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(50)`);
+  await pool.query(`ALTER TABLE users ALTER COLUMN role SET DEFAULT 'Admin'`);
   await pool.query(`UPDATE users SET role = CASE
     WHEN LOWER(TRIM(role)) IN ('admin', 'administrator', 'superadmin') THEN 'Admin'
     WHEN LOWER(TRIM(role)) IN ('gerente', 'manager') THEN 'Gerente'
@@ -282,7 +387,7 @@ const ensureSchema = async () => {
   await ensureColumn('orders', 'customer_address', 'customer_address TEXT DEFAULT NULL');
   await ensureColumn('orders', 'transaction_id', 'transaction_id VARCHAR(100) DEFAULT NULL');
   await ensureColumn('orders', 'items', 'items TEXT DEFAULT NULL');
-  await ensureColumn('customers', 'account_type', 'account_type VARCHAR(30) NOT NULL DEFAULT "normal"');
+  await ensureColumn('customers', 'account_type', "account_type VARCHAR(30) NOT NULL DEFAULT 'normal'");
 };
 
 const mapProduct = (row) => ({

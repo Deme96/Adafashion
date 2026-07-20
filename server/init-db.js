@@ -1,4 +1,9 @@
-const { pool } = require('./db');
+const useSupabase = Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL);
+const dbModule = useSupabase
+  ? require('./db-supabase')
+  : (process.env.VERCEL || process.env.NODE_ENV === 'production' ? require('./db-infinity') : require('./db'));
+
+const { pool } = dbModule;
 
 const ADMIN_EMAIL = 'admin@adafashion.com';
 const ADMIN_PASSWORD = 'admin123';
