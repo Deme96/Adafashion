@@ -11,8 +11,8 @@ const HeroSection = () => {
       {/* Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-rose-400 via-rose-500 to-pink-400" />
-        {/* Carousel behind the title (50% opacity) - desktop only */}
-        <div className="absolute inset-0 hidden lg:block">
+        {/* Carousel behind the title (50% opacity) */}
+        <div className="absolute inset-0 opacity-50 sm:opacity-100">
           <LogoCarousel />
         </div>
 
