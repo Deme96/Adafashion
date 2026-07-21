@@ -72,9 +72,8 @@ const LogoCarousel = ({ images = null, interval = 5000 }) => {
               alt={`slide-${i}`}
               onLoad={() => handleImageLoad(i)}
               onError={() => handleImageLoad(i)}
-              className="w-full h-full object-cover"
-              style={{ display: loadedImages[i] ? 'block' : 'none', transform: 'translateZ(0)', willChange: 'transform' }}
-              loading="lazy"
+              className="w-full h-full object-cover transition-opacity duration-500"
+              style={{ opacity: loadedImages[i] ? 1 : 0, transform: 'translateZ(0)', willChange: 'transform' }}
             />
           </div>
         ))}
