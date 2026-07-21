@@ -110,7 +110,7 @@ const Dashboard = () => {
   }, [orders, products]);
 
   // Split into most and least ordered
-  const mostOrdered = productOrderData.filter(p => p.Pedidos > 0).slice(0, 5);
+  const mostOrdered = productOrderData.slice(0, 5);
   const leastOrdered = [...productOrderData].sort((a, b) => a.Pedidos - b.Pedidos).slice(0, 5);
 
   // ---- Payment methods pie chart ----
