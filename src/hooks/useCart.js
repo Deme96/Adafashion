@@ -83,6 +83,8 @@ export const useCart = () => {
           size: size || '',
           color: color || '',
           quantity,
+          is_wholesale: product.is_wholesale || false,
+          wholesale_min_qty: product.wholesale_min_qty || 1,
         }];
       }
 

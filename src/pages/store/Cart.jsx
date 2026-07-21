@@ -481,14 +481,63 @@ const Cart = () => {
                 <div className="bg-gray-50 rounded-2xl p-6 sticky top-32">
                   <h3 className="font-bold text-gray-900 mb-4">Resumo do Pedido</h3>
                   <div className="space-y-3 mb-4">
-                    {cart.map(item => (
-                      <div key={item.key} className="flex justify-between text-sm">
-                        <span className="text-gray-500 truncate max-w-[60%]">
-                          {item.product_name} ×{item.quantity}
-                        </span>
-                        <span className="font-medium">{formatCurrency(item.price * item.quantity)}</span>
-                      </div>
-                    ))}
+                    {cart.map(item => {
+                      const minQty = item.is_wholesale && item.wholesale_min_qty ? parseInt(item.wholesale_min_qty) : 1;
+                      return (
+                        <div key={item.key} className="space-y-1.5">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-700 truncate max-w-[55%] font-medium">
+                              {item.product_name}
+                            </span>
+                            <span className="font-bold text-gray-900">{formatCurrency(item.price * item.quantity)}</span>
+                          </div>
+                          {/* Quantity controls */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => updateQuantity(item.key, Math.max(minQty, item.quantity - 1))}
+                                className="w-6 h-6 flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition-colors text-gray-600"
+                                disabled={item.quantity <= minQty}
+                              >
+                                <Minus size={11} />
+                              </button>
+                              <input
+                                type="number"
+                                min={minQty}
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || minQty;
+                                  updateQuantity(item.key, Math.max(minQty, val));
+                                }}
+                                className="w-10 h-6 text-center text-xs font-bold border border-gray-200 rounded-md outline-none focus:ring-1 focus:ring-rose-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <button
+                                onClick={() => updateQuantity(item.key, item.quantity + 1)}
+                                className="w-6 h-6 flex items-center justify-center rounded-md border border-gray-200 hover:bg-gray-100 transition-colors text-gray-600"
+                              >
+                                <Plus size={11} />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => removeItem(item.key)}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              title="Remover"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                          {/* Min qty warning for wholesale */}
+                          {item.is_wholesale && minQty > 1 && (
+                            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5">
+                              <Store size={10} className="text-amber-500 flex-shrink-0" />
+                              <span className="text-[10px] text-amber-700 font-medium">
+                                Mín: {minQty} unidades
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="border-t border-gray-200 pt-3 space-y-2 text-sm">
                     <div className="flex justify-between text-gray-500">
