@@ -174,7 +174,7 @@ const Finances = () => {
   [orders]);
 
   const expenses = useMemo(() =>
-    purchases.filter(p => p.status !== 'Cancelado').reduce((s, p) => s + (p.total_cost || 0), 0),
+    purchases.filter(p => p.status !== 'Cancelado').reduce((s, p) => s + (parseFloat(p.total_cost) || 0), 0),
   [purchases]);
 
   const profit = revenue - expenses;
@@ -192,7 +192,7 @@ const Finances = () => {
         if (p.status === 'Cancelado') return false;
         const d = new Date(p.purchase_date || p.created_at);
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === m.key;
-      }).reduce((s, p) => s + (p.total_cost || 0), 0);
+      }).reduce((s, p) => s + (parseFloat(p.total_cost) || 0), 0);
 
       return { name: m.label, Receita: rev, Despesas: exp };
     });

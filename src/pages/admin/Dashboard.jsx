@@ -41,7 +41,7 @@ const Dashboard = () => {
     const totalRevenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
     const totalExpenses = purchases
       .filter(p => p.status !== 'Cancelado')
-      .reduce((s, p) => s + (p.total_cost || 0), 0);
+      .reduce((s, p) => s + (parseFloat(p.total_cost) || 0), 0);
     const totalProducts = products.length;
     const lowStock = products.filter(p => p.stock <= 5 && p.stock > 0).length;
 
@@ -78,7 +78,7 @@ const Dashboard = () => {
       return {
         name: d.label,
         Vendas: dayOrders.reduce((s, o) => s + (o.total || 0), 0),
-        Compras: dayPurchases.reduce((s, p) => s + (p.total_cost || 0), 0),
+        Compras: dayPurchases.reduce((s, p) => s + (parseFloat(p.total_cost) || 0), 0),
       };
     });
   }, [orders, purchases]);

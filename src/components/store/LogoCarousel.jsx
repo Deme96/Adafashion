@@ -73,7 +73,8 @@ const LogoCarousel = ({ images = null, interval = 5000 }) => {
               onLoad={() => handleImageLoad(i)}
               onError={() => handleImageLoad(i)}
               className="w-full h-full object-cover"
-              style={{ display: loadedImages[i] ? 'block' : 'none' }}
+              style={{ display: loadedImages[i] ? 'block' : 'none', transform: 'translateZ(0)', willChange: 'transform' }}
+              loading="lazy"
             />
           </div>
         ))}

@@ -94,7 +94,7 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-3 text-sm text-rose-300/60">
                 <MapPin size={16} className="text-white/50 shrink-0 mt-0.5" />
-                Pilum - Entrada de Djabi, Bissau, GB
+                Pilum - Entrada de ADPP, Bissau, GB
               </li>
             </ul>
           </div>
