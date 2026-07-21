@@ -58,6 +58,7 @@ const Sales = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
+      if (order.payment_method === 'Reserva na Loja' && order.payment_status !== 'paid') return false;
       const matchesSearch = 
         order.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
         String(order.id ?? '').toLowerCase().includes(search.toLowerCase());
@@ -93,8 +94,11 @@ const Sales = () => {
     });
   }, [orders, search, statusFilter, paymentFilter, dateFilter, printDateRange, printStatus]);
 
-  // Consider all non-cancelled orders for stats
-  const validOrders = filteredOrders.filter(o => o.status !== 'Cancelado');
+  // Consider only finalized orders for stats (Entregue, Concluído, or Paid Reservations)
+  const validOrders = filteredOrders.filter(o => 
+    o.status !== 'Cancelado' && 
+    (o.status === 'Entregue' || o.status === 'Concluído' || o.payment_status === 'paid')
+  );
   const totalRevenue = useMemo(() => validOrders.reduce((s, o) => s + (o.total || 0), 0), [validOrders]);
   const totalItems = useMemo(() => validOrders.reduce((s, o) => s + (o.items || []).reduce((si, i) => si + (i.quantity || 1), 0), 0), [validOrders]);
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { useCart } from '../../hooks/useCart';
 
@@ -106,30 +106,60 @@ const WholesaleProductCard = ({ product }) => {
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Qtd (Mín: {minQty}):</span>
-              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setQuantity(q => Math.max(minQty, q - 1));
-                  }}
-                  className="p-1.5 hover:bg-gray-50 disabled:opacity-50"
-                  disabled={isOutOfStock || quantity <= minQty}
-                >
-                  <Minus size={12} />
-                </button>
-                <span className="px-2 text-xs font-semibold min-w-[24px] text-center">{quantity}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setQuantity(q => q + 1);
-                  }}
-                  className="p-1.5 hover:bg-gray-50 disabled:opacity-50"
-                  disabled={isOutOfStock}
-                >
-                  <Plus size={12} />
-                </button>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">Quantidade:</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuantity(q => Math.max(minQty, q - 1));
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                    disabled={isOutOfStock || quantity <= minQty}
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <input
+                    type="number"
+                    min={minQty}
+                    max={product.stock || 9999}
+                    value={quantity}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      const val = parseInt(e.target.value) || minQty;
+                      const maxStock = product.stock || 9999;
+                      setQuantity(Math.min(maxStock, Math.max(minQty, val)));
+                    }}
+                    onBlur={() => {
+                      if (quantity < minQty) setQuantity(minQty);
+                    }}
+                    className="w-14 h-7 text-center text-xs font-bold border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-rose-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    disabled={isOutOfStock}
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const maxStock = product.stock || 9999;
+                      setQuantity(q => Math.min(maxStock, q + 1));
+                    }}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                    disabled={isOutOfStock || quantity >= (product.stock || 9999)}
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                <AlertCircle size={11} className="text-amber-500 flex-shrink-0" />
+                <span className="text-[10px] text-amber-700 font-medium">
+                  Reserva mínima: {minQty} {minQty === 1 ? 'unidade' : 'unidades'}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-gray-400">Subtotal: </span>
+                <span className="text-sm font-bold text-rose-600">{formatCurrency(product.price * quantity)}</span>
               </div>
             </div>
           </div>

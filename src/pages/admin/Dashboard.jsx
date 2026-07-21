@@ -36,7 +36,7 @@ const Dashboard = () => {
 
   // ---- Stats ----
   const stats = useMemo(() => {
-    const delivered = orders.filter(o => o.status === 'Entregue');
+    const delivered = orders.filter(o => o.status === 'Entregue' || o.status === 'Concluído' || o.payment_status === 'paid');
     const pending = orders.filter(o => o.status === 'Pendente');
     const totalRevenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
     const totalExpenses = purchases
