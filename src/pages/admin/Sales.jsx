@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../lib/api';
 import { formatCurrency, formatDate, ORDER_STATUS } from '../../lib/utils';
-import { DollarSign, Search, Filter, Download, Printer, ShoppingBag, Package, Plus, Eye, CheckCircle } from 'lucide-react';
+import { DollarSign, Search, Filter, Download, Printer, ShoppingBag, Package, Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
 import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
@@ -273,13 +273,22 @@ const Sales = () => {
                       <Eye size={16} />
                     </button>
                     {order.status !== 'Entregue' && order.status !== 'Cancelado' && (
-                      <button
-                        onClick={() => updateStatus(order.id, 'Entregue')}
-                        className="p-2 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-700 transition-colors"
-                        title="Concluir Entrega"
-                      >
-                        <CheckCircle size={16} />
-                      </button>
+                        <button
+                          onClick={() => updateStatus(order.id, 'Entregue')}
+                          className="p-2 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-700 transition-colors"
+                          title="Concluir Entrega"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                    )}
+                    {order.status !== 'Cancelado' && (
+                        <button
+                          onClick={() => { if(confirm('Tem certeza que deseja anular esta venda?')) updateStatus(order.id, 'Cancelado'); }}
+                          className="p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-700 transition-colors"
+                          title="Anular Venda"
+                        >
+                          <XCircle size={16} />
+                        </button>
                     )}
                   </td>
                 </tr>
@@ -411,13 +420,23 @@ const Sales = () => {
               </div>
             </div>
 
-            {selectedOrder.status !== 'Entregue' && selectedOrder.status !== 'Cancelado' && (
-              <button
-                onClick={() => { updateStatus(selectedOrder.id, 'Entregue'); setSelectedOrder(null); }}
-                className="w-full mt-4 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-              >
-                <CheckCircle size={16} /> Concluir Entrega
-              </button>
+            {selectedOrder.status !== 'Cancelado' && (
+              <div className="mt-4 flex gap-3">
+                {selectedOrder.status !== 'Entregue' && (
+                  <button
+                    onClick={() => { updateStatus(selectedOrder.id, 'Entregue'); setSelectedOrder(null); }}
+                    className="flex-1 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={16} /> Concluir Entrega
+                  </button>
+                )}
+                <button
+                  onClick={() => { if(confirm('Tem certeza que deseja anular esta venda?')) { updateStatus(selectedOrder.id, 'Cancelado'); setSelectedOrder(null); } }}
+                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  <XCircle size={16} /> Anular Venda
+                </button>
+              </div>
             )}
           </div>
         )}

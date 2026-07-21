@@ -1,8 +1,9 @@
 // ========== Ada Fashion Purchases & Products Page ==========
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Search, Trash2, Pencil, Package, Eye } from 'lucide-react';
+import { Plus, Search, Trash2, Pencil, Package, Eye, DollarSign } from 'lucide-react';
 import api from '../../lib/api';
 import { formatCurrency, CATEGORIES } from '../../lib/utils';
+import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 
@@ -37,6 +38,7 @@ const Purchases = () => {
   // Custom Filters
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
 
   useEffect(() => {
     loadProducts();
@@ -96,9 +98,25 @@ const Purchases = () => {
       const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
       const prodStatus = p.status_geral || (p.is_active ? 'Ativo' : 'Inativo');
       const matchesStatus = statusFilter === 'all' || prodStatus === statusFilter;
-      return matchesSearch && matchesCategory && matchesStatus;
+      
+      let matchesDate = true;
+      if (dateFilter !== 'all') {
+        const prodDate = new Date(p.created_at);
+        const now = new Date();
+        if (dateFilter === 'today') {
+          matchesDate = prodDate.toDateString() === now.toDateString();
+        } else if (dateFilter === 'month') {
+          matchesDate = prodDate.getMonth() === now.getMonth() && prodDate.getFullYear() === now.getFullYear();
+        }
+      }
+
+      return matchesSearch && matchesCategory && matchesStatus && matchesDate;
     });
-  }, [products, search, categoryFilter, statusFilter]);
+  }, [products, search, categoryFilter, statusFilter, dateFilter]);
+
+  const totalComprasAcumuladas = useMemo(() => {
+    return filteredProducts.reduce((sum, p) => sum + (parseFloat(p.total_cost) || 0), 0);
+  }, [filteredProducts]);
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -178,7 +196,7 @@ const Purchases = () => {
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-fashion text-3xl font-bold text-rose-500 tracking-tight">Compras & Produtos</h1>
+          <h1 className="font-fashion text-3xl font-bold text-rose-500 tracking-tight">Loja & Produtos</h1>
           <p className="text-gray-500 text-sm mt-1">Registe as compras de stock e catálogo de produtos</p>
         </div>
         <button onClick={openNew} className="inline-flex items-center gap-2 bg-rose-400 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-500 transition-colors shadow-sm shadow-rose-400/20">
@@ -218,7 +236,21 @@ const Purchases = () => {
             <option value="Esgotado">Esgotado</option>
             <option value="Inativo">Inativo</option>
           </select>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="pl-4 pr-8 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-rose-300 outline-none"
+          >
+            <option value="all">Data: Todas</option>
+            <option value="today">Hoje</option>
+            <option value="month">Este Mês</option>
+          </select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatsCard icon={DollarSign} label="Total de Compras (Acumulado)" value={formatCurrency(totalComprasAcumuladas)} color="blue" />
+        <StatsCard icon={Package} label="Produtos na Lista" value={filteredProducts.length} color="pink" />
       </div>
 
       <div className="bg-white rounded-2xl border border-pink-100 overflow-hidden">

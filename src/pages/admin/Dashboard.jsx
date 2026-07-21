@@ -25,7 +25,7 @@ const Dashboard = () => {
         const orders = await api.getAllOrders();
         const products = await api.getAllProducts();
         setOrders(orders || []);
-        setPurchases([]);  // Purchases are part of products in new system
+        setPurchases(products || []); // Link purchases to products (stock purchases)
         setProducts(products || []);
       } catch (error) {
         console.error('Error loading dashboard data:', error);

@@ -40,9 +40,12 @@ const Finances = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const orders = await api.getAllOrders();
-        setOrders(orders || []);
-        setPurchases([]);  // Purchases are part of products in new system
+        const [ordersData, productsData] = await Promise.all([
+          api.getAllOrders(),
+          api.getAllProducts()
+        ]);
+        setOrders(ordersData || []);
+        setPurchases(productsData || []); // Link purchases to products
         loadReportData();
       } catch (error) {
         console.error('Error loading finances:', error);

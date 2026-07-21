@@ -49,7 +49,7 @@ export const translations = {
     // Admin Sidebar
     dashboard: 'Dashboard',
     inventory: 'Estoque (Fluxo)',
-    purchases: 'Compras',
+    purchases: 'Loja',
     sales: 'Vendas',
     finances: 'Finanças',
     settings: 'Configurações',

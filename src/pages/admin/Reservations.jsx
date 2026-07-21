@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../lib/api';
 import { formatCurrency, formatDate, formatDateTime, ORDER_STATUS } from '../../lib/utils';
-import { Search, Printer, Trash2, Eye, CalendarClock, Clock, CheckCircle, Package } from 'lucide-react';
+import { Search, Printer, Trash2, Eye, CalendarClock, Clock, CheckCircle, Package, DollarSign } from 'lucide-react';
 import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
@@ -29,6 +29,15 @@ const Reservations = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [reservationToDelete, setReservationToDelete] = useState(null);
+  
+  // Payment State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Dinheiro');
+  
+  // Delivery status update wrapper
+  const handleDeliver = async (orderId) => {
+    await updateStatus(orderId, 'Entregue');
+  };
 
   useEffect(() => {
     loadReservations();
@@ -134,6 +143,21 @@ const Reservations = () => {
   const confirmRemoveReservation = (order) => {
     setReservationToDelete(order);
     setDeleteConfirmOpen(true);
+  };
+
+  const handlePayment = async () => {
+    if (!selectedOrder) return;
+    try {
+      await api.updateOrder(selectedOrder.id, { 
+        payment_method: selectedPaymentMethod,
+        payment_status: 'paid'
+      });
+      setIsPaymentModalOpen(false);
+      setSelectedOrder(null);
+      await loadReservations();
+    } catch (error) {
+      console.error('Erro ao registrar pagamento:', error);
+    }
   };
 
   const handleDeleteConfirmed = () => {
@@ -248,6 +272,18 @@ const Reservations = () => {
                       <button onClick={() => setSelectedOrder(order)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors" title="Ver Detalhes">
                         <Eye size={16} />
                       </button>
+                      <button onClick={() => { setSelectedOrder(order); setIsPaymentModalOpen(true); }} className="p-2 rounded-lg hover:bg-emerald-100 text-gray-400 hover:text-emerald-700 transition-colors" title="Registrar Pagamento">
+                        <DollarSign size={16} />
+                      </button>
+                      {order.status !== 'Entregue' && order.status !== 'Cancelado' && (
+                        <button
+                          onClick={() => handleDeliver(order.id)}
+                          className="p-2 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-700 transition-colors"
+                          title="Concluir Entrega"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                      )}
                       <button onClick={() => confirmRemoveReservation(order)} className="p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors" title="Remover Reserva">
                         <Trash2 size={16} />
                       </button>
@@ -347,10 +383,12 @@ const Reservations = () => {
 
               <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs text-gray-500 uppercase">Atenção</p>
-                  <p className="font-semibold text-rose-600">Pagar na Retirada</p>
-                </div>
+                <button
+                  onClick={() => setIsPaymentModalOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition-colors flex items-center gap-2"
+                >
+                  <DollarSign size={16} /> Pagar & Transferir
+                </button>
                 <button
                   onClick={() => confirmRemoveReservation(selectedOrder)}
                   className="px-4 py-2 rounded-xl bg-red-50 text-red-600 font-semibold hover:bg-red-100 transition-colors"
@@ -368,9 +406,55 @@ const Reservations = () => {
                   <span className="text-xl font-bold text-rose-500">{formatCurrency(selectedOrder.total)}</span>
                 </div>
               </div>
+              
+              {selectedOrder.status !== 'Entregue' && selectedOrder.status !== 'Cancelado' && (
+                <button
+                  onClick={() => { handleDeliver(selectedOrder.id); setSelectedOrder(null); }}
+                  className="w-full mt-4 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <CheckCircle size={16} /> Concluir Entrega
+                </button>
+              )}
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Payment Modal */}
+      <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Registrar Pagamento" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Selecione a forma de pagamento real. A reserva será transferida para a aba de Vendas.
+          </p>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Método de Pagamento</label>
+            <select
+              value={selectedPaymentMethod}
+              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-rose-400"
+            >
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Orange Money">Orange Money</option>
+              <option value="T-Paga">T-Paga</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Transferência">Transferência Bancária</option>
+            </select>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => setIsPaymentModalOpen(false)}
+              className="flex-1 px-4 py-2 text-gray-600 font-semibold hover:bg-gray-50 rounded-xl"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handlePayment}
+              className="flex-1 px-4 py-2 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
