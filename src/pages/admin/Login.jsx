@@ -95,10 +95,6 @@ const Login = () => {
           </form>
 
           <div className="mt-8 text-center space-y-3">
-            <p className="text-xs text-gray-400">
-              Demo credentials: <br/>
-              <span className="font-semibold">admin@adafashion.com</span> / <span className="font-semibold">admin123</span>
-            </p>
             <Link
               to="/"
               className="inline-flex items-center justify-center text-sm font-semibold text-rose-500 hover:text-rose-600 transition-colors"

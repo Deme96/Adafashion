@@ -12,6 +12,20 @@ const ADMIN_EMAIL = ADMIN_CREDENTIALS?.email || 'admin@adafashion.com';
 const ADMIN_PASSWORD = ADMIN_CREDENTIALS?.password || 'admin123';
 const ADMIN_FULL_NAME = ADMIN_CREDENTIALS?.fullName || 'Administrador AdaFashion';
 
+// Log Helper
+const logActivity = async (action, details, userName = 'Admin', entityType = null, entityId = null) => {
+  try {
+    if (!pool) return;
+    await pool.query(
+      'INSERT INTO activity_logs (action, details, user_name, entity_type, entity_id) VALUES (?, ?, ?, ?, ?)',
+      [action, details, userName, entityType, entityId]
+    );
+  } catch (error) {
+    console.error('Failed to log activity:', error);
+  }
+};
+
+
 const app = express();
 
 // Configurar CORS para permitir acesso de dispositivos externos
@@ -23,7 +37,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
 
 const sanitizeValue = (value, maxLength = 1200) => {
   if (value === null || value === undefined) return null;
@@ -415,7 +429,13 @@ const mapStoreSettings = (row) => ({...row});
 
 const mapOrder = (row) => ({
   ...row,
+  subtotal: parseFloat(row.subtotal) || 0,
+  discount: parseFloat(row.discount) || 0,
+  total: parseFloat(row.total) || 0,
   items: parseJson(row.items) || [],
+  shipping_address: parseJson(row.shipping_address) || {},
+  created_at: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+  updated_at: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
 });
 
 const mapUser = (row) => ({
@@ -499,12 +519,55 @@ app.post('/api/orders', async (req, res) => {
 
 app.put('/api/orders/:id', async (req, res) => {
   try {
-    const { status, payment_status, total, notes, items } = req.body;
-    await pool.query(
-      'UPDATE orders SET status = ?, payment_status = ?, total = ?, notes = ?, items = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [status, payment_status, total, notes || null, toJsonString(items) || null, req.params.id]
-    );
-    res.json({ id: req.params.id, ...req.body });
+    const { status, payment_status, total, notes, items, customer_name, customer_email, customer_phone, payment_method } = req.body;
+    
+    // Build dynamic update query - only update fields that were sent
+    const updates = [];
+    const values = [];
+    if (status !== undefined) { updates.push('status = ?'); values.push(status); }
+    if (payment_status !== undefined) { updates.push('payment_status = ?'); values.push(payment_status); }
+    if (total !== undefined) { updates.push('total = ?'); values.push(total); }
+    if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
+    if (items !== undefined) { updates.push('items = ?'); values.push(toJsonString(items)); }
+    if (customer_name !== undefined) { updates.push('customer_name = ?'); values.push(customer_name); }
+    if (customer_email !== undefined) { updates.push('customer_email = ?'); values.push(customer_email); }
+    if (customer_phone !== undefined) { updates.push('customer_phone = ?'); values.push(customer_phone); }
+    if (payment_method !== undefined) { updates.push('payment_method = ?'); values.push(payment_method); }
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+
+    if (updates.length > 1) {
+      await pool.query(
+        `UPDATE orders SET ${updates.join(', ')} WHERE id = ?`,
+        [...values, req.params.id]
+      );
+    }
+
+    // When status changes to 'Entregue', decrement stock for each item and log activity
+    if (status === 'Entregue') {
+      // Get the order to read its items
+      const [orderRows] = await pool.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+      const order = orderRows[0];
+      if (order) {
+        const orderItems = parseJson(order.items) || [];
+        for (const item of orderItems) {
+          const productId = item.product_id || item.id;
+          if (productId) {
+            await pool.query(
+              'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+              [item.quantity || 1, productId]
+            );
+          }
+        }
+        await logActivity(
+          'Venda Concluída',
+          `Encomenda #${String(order.order_number || order.id).slice(-8)} entregue ao cliente ${order.customer_name || 'Balcão'}. Total: ${order.total} F CFA.`,
+          'Sistema', 'Vendas', order.id
+        );
+      }
+    }
+
+    const [updatedRows] = await pool.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
+    res.json(mapOrder(updatedRows[0]));
   } catch (error) {
     console.error('Error updating order', error);
     res.status(500).json({ message: 'Failed to update order' });
@@ -596,7 +659,9 @@ app.post('/api/products', async (req, res) => {
     );
 
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [result.insertId]);
-    res.status(201).json(mapProduct(rows[0]));
+    const newProduct = rows[0];
+    await logActivity('Cadastro', `Novo produto adicionado: ${name}`, 'Sistema', 'Produtos', newProduct.id);
+    res.status(201).json(mapProduct(newProduct));
   } catch (error) {
     console.error('Error creating product', error);
     res.status(500).json({ message: 'Failed to create product' });
@@ -657,7 +722,9 @@ app.put('/api/products/:id', async (req, res) => {
     );
 
     const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
-    res.json(mapProduct(rows[0]));
+    const updatedProduct = rows[0];
+    await logActivity('Edição', `O produto '${updatedProduct.name || name}' foi atualizado.`, 'Sistema', 'Produtos', updatedProduct.id);
+    res.json(mapProduct(updatedProduct));
   } catch (error) {
     console.error('Error updating product', error);
     res.status(500).json({ message: 'Failed to update product' });
@@ -931,8 +998,23 @@ app.post('/api/users', async (req, res) => {
     const { name, email, password, role } = req.body;
     const normalizedRole = normalizeUserRole(role || 'Vendedor');
     const [result] = await pool.query('INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)', [name, email, password, normalizedRole, 'active']);
-    const [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE id = ?', [result.insertId]);
-    res.status(201).json(mapUser(rows[0]));
+    
+    // Fetch newly created user by ID or Email as fallback
+    const insertId = result.insertId || (result.rows && result.rows[0] ? result.rows[0].id : null);
+    let rows = [];
+    if (insertId) {
+      [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE id = ?', [insertId]);
+    } else {
+      [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE email = ? ORDER BY created_at DESC LIMIT 1', [email]);
+    }
+    
+    const newUser = rows[0];
+    if (newUser) {
+      await logActivity('Criação', `Novo usuário registrado: ${name} (${normalizedRole})`, 'Sistema', 'Usuários', newUser.id);
+      res.status(201).json(mapUser(newUser));
+    } else {
+      throw new Error('Falha ao resgatar usuário recém-criado');
+    }
   } catch (error) {
     console.error('Error creating user', error);
     res.status(500).json({ message: 'Failed to create user' });

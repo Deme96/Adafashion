@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../lib/api';
 import { formatCurrency, formatDate, ORDER_STATUS } from '../../lib/utils';
-import { Search, Eye, Filter } from 'lucide-react';
+import { Search, Eye, Filter, Pencil, CheckCircle } from 'lucide-react';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 
@@ -126,8 +126,17 @@ const Orders = () => {
                   </td>
                   <td className="py-3 px-4 text-gray-500">{formatDate(order.created_at)}</td>
                   <td className="py-3 px-4 font-bold">{formatCurrency(order.total)}</td>
-                  <td className="py-3 px-4 text-right">
-                    <button onClick={() => setSelectedOrder(order)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors"><Eye size={15} /></button>
+                  <td className="py-3 px-4 text-right flex items-center justify-end gap-1">
+                    <button onClick={() => setSelectedOrder(order)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors" title="Ver Detalhes"><Eye size={15} /></button>
+                    {order.status !== 'Entregue' && order.status !== 'Cancelado' && (
+                      <button
+                        onClick={() => updateStatus(order.id, 'Entregue')}
+                        className="p-2 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-700 transition-colors"
+                        title="Concluir Entrega"
+                      >
+                        <CheckCircle size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -190,6 +199,15 @@ const Orders = () => {
                 <span className="text-xl font-bold text-rose-500">{formatCurrency(selectedOrder.total)}</span>
               </div>
             </div>
+
+            {selectedOrder.status !== 'Entregue' && selectedOrder.status !== 'Cancelado' && (
+              <button
+                onClick={() => { updateStatus(selectedOrder.id, 'Entregue'); setSelectedOrder(null); }}
+                className="w-full mt-4 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <CheckCircle size={16} /> Concluir Entrega
+              </button>
+            )}
           </div>
         )}
       </Modal>

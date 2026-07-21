@@ -7,13 +7,21 @@ export const formatCurrency = (value) => {
   const storedCurrency = localStorage.getItem('adafashion_currency');
   const currency = storedCurrency && storedCurrency !== 'BRL' ? storedCurrency : 'XOF';
   const EXCHANGE_RATES = { USD: 0.20, EUR: 0.18, XOF: 1 };
-  const CURRENCY_LOCALES = { USD: 'en-US', EUR: 'de-DE', XOF: 'fr-FR' };
   
   const currencyCode = ['USD', 'EUR', 'XOF'].includes(currency) ? currency : 'XOF';
   const rate = EXCHANGE_RATES[currencyCode] || 1;
-  const converted = (value || 0) * rate;
   
-  return new Intl.NumberFormat(CURRENCY_LOCALES[currencyCode] || 'fr-FR', {
+  let numValue = Number(value);
+  if (isNaN(numValue)) numValue = 0;
+  
+  const converted = numValue * rate;
+  
+  if (currencyCode === 'XOF') {
+    return Math.round(converted).toLocaleString('pt-BR') + ' F CFA';
+  }
+  
+  const CURRENCY_LOCALES = { USD: 'en-US', EUR: 'de-DE' };
+  return new Intl.NumberFormat(CURRENCY_LOCALES[currencyCode] || 'en-US', {
     style: 'currency',
     currency: currencyCode,
   }).format(converted);
