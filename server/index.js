@@ -1375,8 +1375,18 @@ const distPath = path.join(__dirname, '../dist');
 app.use(express.static(distPath));
 
 // Catch-all route to serve the React app for any other request
+const fs = require('fs');
 app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(500).send(`
+      <h1>Erro: Frontend não foi construído</h1>
+      <p>O arquivo <code>dist/index.html</code> não foi encontrado.</p>
+      <p>Por favor, certifique-se de que o <b>Build Command</b> no Render está configurado como: <code>npm install && npm run build</code></p>
+    `);
+  }
 });
 
 const startServer = async () => {

@@ -1,12 +1,15 @@
 const { Pool } = require('pg');
 
-const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+const connectionString = process.env.https://sfokmydhycjjiexmbijd.supabase.co || process.env.postgresql://postgres.sfokmydhycjjiexmbijd:Nademe100%@@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true;
 
 const createSupabasePool = () => {
   if (!connectionString) {
-    return null;
+    console.warn('⚠️ WARNING: DATABASE_URL is not set. Database connection pool will be null.');
+    // We can still return a dummy object or null, but let's throw an error if query is called
+    return {
+      query: () => { throw new Error('Database not configured. Please set DATABASE_URL.'); }
+    };
   }
-
   const pgPool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
