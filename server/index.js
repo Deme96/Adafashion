@@ -1369,6 +1369,16 @@ app.use(async (req, res, next) => {
   }
 });
 
+// Serve frontend static files in production
+const path = require('path');
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Catch-all route to serve the React app for any other request
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 const startServer = async () => {
   try {
     await initializeApp();
