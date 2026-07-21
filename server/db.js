@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 
-const connectionString = process.env.https://sfokmydhycjjiexmbijd.supabase.co || process.env.postgresql://postgres.sfokmydhycjjiexmbijd:Nademe100%@@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true;
+// O Supabase requer que caracteres especiais como % e @ na senha sejam codificados na URL (%25 e %40)
+const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL || 'postgresql://postgres.sfokmydhycjjiexmbijd:Nademe100%25%40@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
 
 const createSupabasePool = () => {
   if (!connectionString) {
@@ -33,6 +34,8 @@ const createSupabasePool = () => {
 
   const shouldAppendReturningId = (text) => /^\s*INSERT\b/i.test(text) && !/\bRETURNING\b/i.test(text);
 
+  const originalQuery = pgPool.query.bind(pgPool);
+
   const queryWrapper = async (text, params = []) => {
     try {
       const normalizedText = translateQuery(text, params);
@@ -40,7 +43,7 @@ const createSupabasePool = () => {
         ? `${normalizedText} RETURNING id`
         : normalizedText;
 
-      const result = await pgPool.query(queryText, params);
+      const result = await originalQuery(queryText, params);
 
       if (shouldReturnRows(text)) {
         return [result.rows || []];
