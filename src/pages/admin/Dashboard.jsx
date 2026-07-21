@@ -90,8 +90,8 @@ const Dashboard = () => {
     orders.forEach(order => {
       if (order.status === 'Cancelado') return;
       (order.items || []).forEach(item => {
-        const name = item.product_name || 'Desconhecido';
-        productCounts[name] = (productCounts[name] || 0) + (item.quantity || 1);
+        const name = item.product_name || item.name || 'Desconhecido';
+        productCounts[name] = (productCounts[name] || 0) + (Number(item.quantity) || 1);
       });
     });
 
@@ -110,7 +110,7 @@ const Dashboard = () => {
   }, [orders, products]);
 
   // Split into most and least ordered
-  const mostOrdered = productOrderData.slice(0, 5);
+  const mostOrdered = productOrderData.filter(p => p.Pedidos > 0).slice(0, 5);
   const leastOrdered = [...productOrderData].sort((a, b) => a.Pedidos - b.Pedidos).slice(0, 5);
 
   // ---- Payment methods pie chart ----
