@@ -1,26 +1,78 @@
-const mysql = require('mysql2/promise');
+const { Pool } = require('pg');
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'adafashion',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  charset: 'utf8mb4',
-  connectTimeout: 10000,
-});
+const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+
+const createSupabasePool = () => {
+  if (!connectionString) {
+    return null;
+  }
+
+  const pgPool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 30000,
+  });
+
+  const translateQuery = (text, params = []) => {
+    if (!Array.isArray(params) || params.length === 0) {
+      return text;
+    }
+
+    let position = 0;
+    return text.replace(/\?/g, () => {
+      position += 1;
+      return `$${position}`;
+    });
+  };
+
+  const shouldReturnRows = (text) => /^\s*(SELECT|WITH)\b/i.test(text);
+
+  const shouldAppendReturningId = (text) => /^\s*INSERT\b/i.test(text) && !/\bRETURNING\b/i.test(text);
+
+  const queryWrapper = async (text, params = []) => {
+    try {
+      const normalizedText = translateQuery(text, params);
+      const queryText = shouldAppendReturningId(normalizedText)
+        ? `${normalizedText} RETURNING id`
+        : normalizedText;
+
+      const result = await pgPool.query(queryText, params);
+
+      if (shouldReturnRows(text)) {
+        return [result.rows || []];
+      }
+
+      return [{
+        insertId: result.rows?.[0]?.id ?? null,
+        affectedRows: result.rowCount ?? 0,
+        rowCount: result.rowCount ?? 0,
+        rows: result.rows || [],
+      }];
+    } catch (error) {
+      console.error(`Supabase query error: ${error.message}`, { text, params });
+      throw error;
+    }
+  };
+
+  pgPool.query = queryWrapper;
+  return pgPool;
+};
+
+const pool = createSupabasePool();
 
 const testConnection = async () => {
-  const connection = await pool.getConnection();
-  await connection.ping();
-  connection.release();
-  return true;
+  if (!pool) return false;
+  const [rows] = await pool.query('SELECT 1 AS ok');
+  return Array.isArray(rows) && rows.length > 0;
 };
 
 module.exports = {
   pool,
   testConnection,
+  ADMIN_CREDENTIALS: {
+    email: process.env.ADMIN_EMAIL || 'admin@adafashion.com',
+    password: process.env.ADMIN_PASSWORD || 'admin123',
+    fullName: process.env.ADMIN_FULL_NAME || 'Administrador AdaFashion',
+  },
 };

@@ -5,13 +5,7 @@
  * Use this to test and fix admin login issues
  */
 
-const useSupabase = Boolean(process.env.SUPABASE_DB_URL || process.env.DATABASE_URL);
-
-const dbModule = useSupabase
-  ? require('./db-supabase')
-  : (process.env.VERCEL || process.env.NODE_ENV === 'production'
-    ? require('./db-infinity')
-    : require('./db'));
+const dbModule = require('./db');
 
 const { pool, ADMIN_CREDENTIALS } = dbModule;
 
