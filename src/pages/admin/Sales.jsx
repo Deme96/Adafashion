@@ -94,27 +94,31 @@ const Sales = () => {
     });
   }, [orders, search, statusFilter, paymentFilter, dateFilter, printDateRange, printStatus]);
 
-  // Consider only finalized orders for stats (Entregue, Concluído, or Paid Reservations)
-  const validOrders = filteredOrders.filter(o => 
-    o.status !== 'Cancelado' && o.status !== 'cancelled' && 
-    (o.status === 'Entregue' || o.status === 'delivered' || o.status === 'Concluído' || o.status === 'Pago' || o.payment_status === 'paid')
-  );
+  // Consider only finalized orders for stats (Entregue, Concluído, Pago, or Paid)
+  const isFinalized = (o) =>
+    o.status !== 'Cancelado' && o.status !== 'cancelled' &&
+    (o.status === 'Entregue' || o.status === 'delivered' ||
+     o.status === 'Concluído' || o.status === 'Pago' || o.payment_status === 'paid');
+
+  const validOrders = useMemo(() => filteredOrders.filter(isFinalized), [filteredOrders]);
   const totalRevenue = useMemo(() => validOrders.reduce((s, o) => s + (o.total || 0), 0), [validOrders]);
   const totalItems = useMemo(() => validOrders.reduce((s, o) => s + (o.items || []).reduce((si, i) => si + (Number(i.quantity) || 1), 0), 0), [validOrders]);
 
+  // Items by category: uses ALL orders (not filtered by UI) so stats are always complete
   const itemsByCategory = useMemo(() => {
     const counts = {};
-    validOrders.forEach(o => {
+    orders.forEach(o => {
+      if (!isFinalized(o)) return;
       (o.items || []).forEach(item => {
-        // 1st: use category stored directly on item
+        // 1st: use category stored directly on item (server enriches this)
         let cat = item.category;
         if (!cat) {
           // 2nd: lookup product by id or name (case-insensitive, type-tolerant)
           const itemName = (item.product_name || item.name || '').toLowerCase().trim();
           const itemProdId = String(item.product_id ?? '');
           const prod = products.find(p =>
-            String(p.id) === itemProdId ||
-            p.name?.toLowerCase().trim() === itemName
+            (itemProdId && String(p.id) === itemProdId) ||
+            (itemName && p.name?.toLowerCase().trim() === itemName)
           );
           cat = prod?.category || 'Diversos';
         }
@@ -122,7 +126,7 @@ const Sales = () => {
       });
     });
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [validOrders, products]);
+  }, [orders, products]);
   // Auto calculate total for manual sales
   useEffect(() => {
     if (newSale.product_id) {
