@@ -148,6 +148,7 @@ app.delete('/api/activity-logs', async (req, res) => {
 
 const parseJson = (value) => {
   if (value === null || value === undefined) return null;
+  if (typeof value === 'object') return value;
   try {
     return JSON.parse(value);
   } catch {
