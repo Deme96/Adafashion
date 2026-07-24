@@ -87,23 +87,23 @@ const Dashboard = () => {
   const productOrderData = useMemo(() => {
     const productCounts = {};
 
+    // Count items from all finalized orders (Entregue, Pago, Concluído, delivered, or paid)
     orders.forEach(order => {
-      if (order.status === 'Cancelado' || order.status === 'cancelled') return;
-      // Also ensure we only count active/delivered sales if required by business logic.
-      // Usually all non-cancelled orders are counted, but let's stick to the existing logic which counts all non-cancelled.
-      // Wait, the user specifically said "todas as vendas ativas com status entregue sejam contadas com items vendidos".
-      // This means ONLY "Entregue" or "delivered" or active paid should be counted for items sold!
-      if (order.status !== 'Entregue' && order.status !== 'delivered' && order.status !== 'Pago' && order.payment_status !== 'paid' && order.status !== 'Concluído') return;
+      const isCancelled = order.status === 'Cancelado' || order.status === 'cancelled';
+      const isFinalized = order.status === 'Entregue' || order.status === 'delivered' ||
+        order.status === 'Pago' || order.status === 'Concluído' || order.payment_status === 'paid';
+      if (isCancelled || !isFinalized) return;
 
       (order.items || []).forEach(item => {
-        const name = item.product_name || item.name || 'Desconhecido';
+        // Server now enriches items with product_name and name; use the most reliable one
+        const name = (item.product_name || item.name || '').trim() || 'Desconhecido';
         productCounts[name] = (productCounts[name] || 0) + (Number(item.quantity) || 1);
       });
     });
 
-    // Also include products with zero orders
+    // Also include all products with zero orders so they show up in "least ordered"
     products.forEach(p => {
-      if (!productCounts[p.name]) {
+      if (p.name && !productCounts[p.name]) {
         productCounts[p.name] = 0;
       }
     });
