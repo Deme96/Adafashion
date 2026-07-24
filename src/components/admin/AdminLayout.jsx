@@ -40,7 +40,7 @@ const AdminLayout = () => {
             >
               <Menu size={20} className="text-rose-500" />
             </button>
-            <span className="font-fashion text-lg font-bold italic text-rose-500 tracking-tight lg:hidden">Ada Fashion</span>
+            <span className="font-fashion text-2xl text-rose-500 lg:hidden">Ada Fashion</span>
           </div>
 
           <div className="flex items-center gap-4 ml-auto">

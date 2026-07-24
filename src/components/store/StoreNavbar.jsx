@@ -65,7 +65,7 @@ const StoreNavbar = () => {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <Link to="/" className="flex flex-col items-center leading-none flex-shrink-0">
-              <span className={`font-fashion text-xl lg:text-2xl font-bold italic tracking-tight whitespace-nowrap transition-colors ${
+              <span className={`font-fashion text-2xl lg:text-3xl tracking-tight whitespace-nowrap transition-colors ${
                 isScrolled ? 'text-rose-500' : 'text-white'
               }`}>
                 Ada Fashion

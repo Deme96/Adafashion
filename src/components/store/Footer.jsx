@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <h2 className="font-fashion text-3xl font-bold italic text-white tracking-tight mb-1">Ada Fashion</h2>
+            <h2 className="font-fashion text-4xl text-white mb-1">Ada Fashion</h2>
             <p className="text-[10px] tracking-[0.25em] uppercase text-white/60 font-medium mb-4">Casa de Bideras</p>
             <p className="text-white/70 text-sm leading-relaxed mb-6">
               Moda contemporânea com qualidade premium. Estilo que transforma, peças que inspiram.

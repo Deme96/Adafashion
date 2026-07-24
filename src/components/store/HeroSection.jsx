@@ -43,7 +43,7 @@ const HeroSection = () => {
           </div>
 
           {/* Title */}
-          <h1 className="font-fashion text-6xl sm:text-8xl lg:text-9xl xl:text-[10rem] font-bold italic text-white tracking-tight leading-[0.85] mb-2">
+          <h1 className="font-fashion text-7xl sm:text-9xl lg:text-[10rem] xl:text-[12rem] text-white leading-[0.9] mb-2">
             Ada Fashion
           </h1>
 

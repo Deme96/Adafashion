@@ -45,7 +45,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-6 h-16 border-b border-white/5">
           <Link to="/admin" className="flex flex-col leading-none">
-            <span className="font-fashion text-xl font-bold italic text-white tracking-tight">Ada Fashion</span>
+            <span className="font-fashion text-2xl text-white">Ada Fashion</span>
             <span className="text-[8px] tracking-[0.2em] uppercase text-white/60 font-medium">Casa de Bideras</span>
           </Link>
           <button

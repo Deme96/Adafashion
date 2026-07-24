@@ -34,7 +34,7 @@ const Login = () => {
         <div className="bg-rose-400 p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-rose-400 to-pink-500 opacity-90" />
           <div className="relative z-10">
-            <h1 className="font-fashion text-4xl font-bold italic text-white tracking-tight mb-1">Ada Fashion</h1>
+            <h1 className="font-fashion text-5xl text-white mb-1">Ada Fashion</h1>
             <p className="text-[10px] tracking-[0.2em] uppercase text-white/80 font-medium">Painel Administrativo</p>
           </div>
         </div>

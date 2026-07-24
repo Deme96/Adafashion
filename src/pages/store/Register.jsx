@@ -81,7 +81,7 @@ const Register = () => {
 
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="font-fashion text-4xl font-bold italic text-rose-500 tracking-tight mb-2">Ada Fashion</h1>
+            <h1 className="font-fashion text-5xl text-rose-500 mb-2">Ada Fashion</h1>
             <p className="text-[10px] tracking-[0.25em] uppercase text-rose-400 font-medium mb-4">Casa de Bideras</p>
             <h2 className="text-xl font-bold text-gray-900">Criar Conta</h2>
             <p className="text-sm text-gray-500 mt-1">Cadastre-se para uma experiência completa de compras</p>
