@@ -34,10 +34,6 @@ const Reservations = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Dinheiro');
   
-  // Delivery status update wrapper
-  const handleDeliver = async (orderId) => {
-    await updateStatus(orderId, 'Entregue');
-  };
 
   useEffect(() => {
     loadReservations();
@@ -151,7 +147,7 @@ const Reservations = () => {
       await api.updateOrder(selectedOrder.id, { 
         payment_method: `Reserva - ${selectedPaymentMethod}`,
         payment_status: 'paid',
-        status: 'Concluído'
+        status: 'Pago'
       });
       setIsPaymentModalOpen(false);
       setSelectedOrder(null);
@@ -276,15 +272,7 @@ const Reservations = () => {
                       <button onClick={() => { setSelectedOrder(order); setIsPaymentModalOpen(true); }} className="p-2 rounded-lg hover:bg-emerald-100 text-gray-400 hover:text-emerald-700 transition-colors" title="Registrar Pagamento">
                         <DollarSign size={16} />
                       </button>
-                      {order.status !== 'Entregue' && order.status !== 'Cancelado' && (
-                        <button
-                          onClick={() => handleDeliver(order.id)}
-                          className="p-2 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-700 transition-colors"
-                          title="Concluir Entrega"
-                        >
-                          <CheckCircle size={16} />
-                        </button>
-                      )}
+
                       <button onClick={() => confirmRemoveReservation(order)} className="p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors" title="Remover Reserva">
                         <Trash2 size={16} />
                       </button>

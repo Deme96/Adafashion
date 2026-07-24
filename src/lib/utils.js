@@ -92,6 +92,7 @@ export const CATEGORIES = [
  */
 export const ORDER_STATUS = {
   'Pendente': { color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
+  'Pago': { color: 'bg-teal-100 text-teal-800', dot: 'bg-teal-500' },
   'Confirmado': { color: 'bg-blue-100 text-blue-800', dot: 'bg-blue-500' },
   'Em Preparo': { color: 'bg-purple-100 text-purple-800', dot: 'bg-purple-500' },
   'Enviado': { color: 'bg-indigo-100 text-indigo-800', dot: 'bg-indigo-500' },
