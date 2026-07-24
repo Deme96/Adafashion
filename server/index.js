@@ -996,8 +996,20 @@ app.get('/api/users', async (req, res) => {
 app.post('/api/users', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    // Cross-check: Ensure email doesn't exist in users or customers
+    const [existingUser] = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+    if (existingUser.length > 0) {
+      return res.status(409).json({ message: 'Este e-mail já está cadastrado no sistema (Usuários).' });
+    }
+    const [existingCustomer] = await pool.query('SELECT id FROM customers WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+    if (existingCustomer.length > 0) {
+      return res.status(409).json({ message: 'Este e-mail já está cadastrado no sistema (Clientes/Zona di Bideras).' });
+    }
+
     const normalizedRole = normalizeUserRole(role || 'Vendedor');
-    const [result] = await pool.query('INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)', [name, email, password, normalizedRole, 'active']);
+    const [result] = await pool.query('INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)', [name, normalizedEmail, password, normalizedRole, 'active']);
     
     // Fetch newly created user by ID or Email as fallback
     const insertId = result.insertId || (result.rows && result.rows[0] ? result.rows[0].id : null);
@@ -1027,7 +1039,20 @@ app.put('/api/users/:id', async (req, res) => {
     const updates = [];
     const values = [];
     if (name) { updates.push('full_name = ?'); values.push(name); }
-    if (email) { updates.push('email = ?'); values.push(email); }
+    if (email) {
+      const normalizedEmail = normalizeEmail(email);
+      // Cross-check for update
+      const [existingUser] = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(email)) = ? AND id != ?', [normalizedEmail, req.params.id]);
+      if (existingUser.length > 0) {
+        return res.status(409).json({ message: 'Este e-mail já está cadastrado no sistema (Usuários).' });
+      }
+      const [existingCustomer] = await pool.query('SELECT id FROM customers WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+      if (existingCustomer.length > 0) {
+        return res.status(409).json({ message: 'Este e-mail já está cadastrado no sistema (Clientes/Zona di Bideras).' });
+      }
+      updates.push('email = ?'); 
+      values.push(normalizedEmail); 
+    }
     if (password) { updates.push('password_hash = ?'); values.push(password); }
     if (role !== undefined) { updates.push('role = ?'); values.push(normalizeUserRole(role)); }
     if (status) { updates.push('status = ?'); values.push(status); }
@@ -1180,9 +1205,14 @@ app.post('/api/customers/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Nome, e-mail e senha são obrigatórios.' });
     }
 
-    const [existing] = await pool.query('SELECT id FROM customers WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
-    if (existing.length > 0) {
-      return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado.' });
+    const [existingCustomer] = await pool.query('SELECT id FROM customers WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+    if (existingCustomer.length > 0) {
+      return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado como cliente.' });
+    }
+
+    const [existingUser] = await pool.query('SELECT id FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+    if (existingUser.length > 0) {
+      return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado como usuário do sistema.' });
     }
 
     await pool.query(

@@ -36,8 +36,8 @@ const Dashboard = () => {
 
   // ---- Stats ----
   const stats = useMemo(() => {
-    const delivered = orders.filter(o => o.status === 'Entregue' || o.status === 'Concluído' || o.payment_status === 'paid');
-    const pending = orders.filter(o => o.status === 'Pendente');
+    const delivered = orders.filter(o => o.status === 'Entregue' || o.status === 'delivered' || o.status === 'Concluído' || o.payment_status === 'paid');
+    const pending = orders.filter(o => o.status === 'Pendente' || o.status === 'pending');
     const totalRevenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
     const totalExpenses = purchases
       .filter(p => p.status !== 'Cancelado')
@@ -61,7 +61,7 @@ const Dashboard = () => {
 
     return days.map(d => {
       const dayOrders = orders.filter(o => {
-        if (o.status === 'Cancelado') return false;
+        if (o.status === 'Cancelado' || o.status === 'cancelled') return false;
         const date = new Date(o.created_at);
         const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         return key === d.key;
@@ -88,7 +88,13 @@ const Dashboard = () => {
     const productCounts = {};
 
     orders.forEach(order => {
-      if (order.status === 'Cancelado') return;
+      if (order.status === 'Cancelado' || order.status === 'cancelled') return;
+      // Also ensure we only count active/delivered sales if required by business logic.
+      // Usually all non-cancelled orders are counted, but let's stick to the existing logic which counts all non-cancelled.
+      // Wait, the user specifically said "todas as vendas ativas com status entregue sejam contadas com items vendidos".
+      // This means ONLY "Entregue" or "delivered" or active paid should be counted for items sold!
+      if (order.status !== 'Entregue' && order.status !== 'delivered' && order.payment_status !== 'paid' && order.status !== 'Concluído') return;
+
       (order.items || []).forEach(item => {
         const name = item.product_name || item.name || 'Desconhecido';
         productCounts[name] = (productCounts[name] || 0) + (Number(item.quantity) || 1);

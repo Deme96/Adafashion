@@ -96,8 +96,8 @@ const Sales = () => {
 
   // Consider only finalized orders for stats (Entregue, Concluído, or Paid Reservations)
   const validOrders = filteredOrders.filter(o => 
-    o.status !== 'Cancelado' && 
-    (o.status === 'Entregue' || o.status === 'Concluído' || o.payment_status === 'paid')
+    o.status !== 'Cancelado' && o.status !== 'cancelled' && 
+    (o.status === 'Entregue' || o.status === 'delivered' || o.status === 'Concluído' || o.payment_status === 'paid')
   );
   const totalRevenue = useMemo(() => validOrders.reduce((s, o) => s + (o.total || 0), 0), [validOrders]);
   const totalItems = useMemo(() => validOrders.reduce((s, o) => s + (o.items || []).reduce((si, i) => si + (i.quantity || 1), 0), 0), [validOrders]);
