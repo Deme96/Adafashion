@@ -97,7 +97,7 @@ const Reservations = () => {
   // Stats
   const validOrders = filteredOrders.filter(o => getStatusValue(o.status) !== 'Cancelado');
   const pendingReservations = validOrders.filter(o => getStatusValue(o.status) === 'Pendente');
-  const completedReservations = validOrders.filter(o => ['Entregue', 'Enviado'].includes(getStatusValue(o.status)));
+  const completedReservations = validOrders.filter(o => ['Entregue', 'Enviado', 'delivered', 'shipped'].includes(getStatusValue(o.status)) || o.payment_status === 'paid');
   const totalValue = useMemo(() => pendingReservations.reduce((s, o) => s + Number(o.total || 0), 0), [pendingReservations]);
 
   const updateStatus = async (id, newStatus) => {
@@ -150,7 +150,8 @@ const Reservations = () => {
     try {
       await api.updateOrder(selectedOrder.id, { 
         payment_method: selectedPaymentMethod,
-        payment_status: 'paid'
+        payment_status: 'paid',
+        status: 'Entregue'
       });
       setIsPaymentModalOpen(false);
       setSelectedOrder(null);
