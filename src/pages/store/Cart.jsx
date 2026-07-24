@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   ShoppingBag, Trash2, Minus, Plus, ArrowLeft, Check,
-  CreditCard, QrCode, FileText, Banknote, ChevronRight, Store
+  CreditCard, QrCode, FileText, Banknote, ChevronRight, Store, Landmark
 } from 'lucide-react';
 import api from '../../lib/api';
 import { formatCurrency } from '../../lib/utils';
@@ -12,13 +12,13 @@ import { validateOrangeMoney, validateMobileMoney, validateVisa } from '../../li
 import StoreNavbar from '../../components/store/StoreNavbar';
 import Footer from '../../components/store/Footer';
 
-const CHECKOUT_PAYMENT_METHODS = ['Orange Money', 'Teletacu', 'Visa', 'Reserva na Loja'];
+const CHECKOUT_PAYMENT_METHODS = ['Dinheiro', 'Teletacu', 'Orange Money', 'Transferência bancária'];
 
 const paymentIcons = {
-  'Orange Money': QrCode,
+  'Dinheiro': Banknote,
   'Teletacu': QrCode,
-  'Visa': CreditCard,
-  'Reserva na Loja': Store,
+  'Orange Money': QrCode,
+  'Transferência bancária': Landmark,
 };
 
 const Cart = () => {
@@ -49,7 +49,7 @@ const Cart = () => {
     const action = location.state?.action || params.get('action');
 
     if (action === 'reserve') {
-      setForm(prev => ({ ...prev, payment_method: 'Reserva na Loja' }));
+      setForm(prev => ({ ...prev, payment_method: 'Dinheiro' }));
       setStep('checkout');
     } else if (action === 'buy') {
       setForm(prev => ({ ...prev, payment_method: 'Orange Money' }));
@@ -77,12 +77,6 @@ const Cart = () => {
         paymentResult = await validateOrangeMoney(form.payment_phone, total);
       } else if (form.payment_method === 'Teletacu') {
         paymentResult = await validateMobileMoney(form.payment_phone, total);
-      } else if (form.payment_method === 'Visa') {
-        paymentResult = await validateVisa({
-          number: form.card_number,
-          expiry: form.card_expiry,
-          cvv: form.card_cvv
-        }, total);
       }
 
       if (paymentResult && !paymentResult.success) {
@@ -400,66 +394,30 @@ const Cart = () => {
                         />
                       </div>
                     )}
-
-                    {form.payment_method === 'Visa' && (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-1.5">Número do Cartão</label>
-                          <input
-                            type="text"
-                            value={form.card_number}
-                            onChange={(e) => setForm(f => ({ ...f, card_number: e.target.value }))}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                            placeholder="0000 0000 0000 0000"
-                            maxLength="19"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                     {form.payment_method === 'Transferência bancária' && (
+                      <div className="space-y-4 animate-fadeIn p-5 bg-blue-50 border border-blue-100 rounded-xl text-blue-900 text-sm">
+                        <div className="flex items-start gap-3">
+                          <Landmark size={24} className="text-blue-500 shrink-0 mt-0.5" />
                           <div>
-                            <label className="block text-sm font-semibold text-gray-900 mb-1.5">Validade</label>
-                            <input
-                              type="text"
-                              value={form.card_expiry}
-                              onChange={(e) => setForm(f => ({ ...f, card_expiry: e.target.value }))}
-                              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                              placeholder="MM/AA"
-                              maxLength="5"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-900 mb-1.5">CVV</label>
-                            <input
-                              type="text"
-                              value={form.card_cvv}
-                              onChange={(e) => setForm(f => ({ ...f, card_cvv: e.target.value }))}
-                              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                              placeholder="123"
-                              maxLength="4"
-                            />
+                            <strong className="block mb-1 text-base">Pagamento via Transferência</strong>
+                            <p className="mb-2">Ao confirmar o pedido, enviaremos os dados da nossa conta bancária para você realizar a transferência.</p>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {form.payment_method === 'Reserva na Loja' && (
+                    {form.payment_method === 'Dinheiro' && (
                       <div className="space-y-4 animate-fadeIn p-5 bg-rose-50 border border-rose-100 rounded-xl text-rose-900 text-sm">
                         <div className="flex items-start gap-3">
-                          <Store size={24} className="text-rose-500 shrink-0 mt-0.5" />
+                          <Banknote size={24} className="text-rose-500 shrink-0 mt-0.5" />
                           <div>
-                            <strong className="block mb-1 text-base">Pagamento na Retirada</strong>
-                            <p className="mb-2">Ao confirmar, seus produtos serão separados e ficarão reservados na nossa loja física.</p>
-                            <p>O pagamento deverá ser realizado apenas no momento em que vier levantar a sua encomenda.</p>
+                            <strong className="block mb-1 text-base">Pagamento em Dinheiro</strong>
+                            <p className="mb-2">O pagamento será realizado no momento da entrega do pedido ou retirada na loja.</p>
                           </div>
                         </div>
-                        <button
-                          onClick={handleCheckout}
-                          disabled={isProcessing}
-                          className="w-full mt-2 bg-rose-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-rose-700 transition-colors flex items-center justify-center gap-2"
-                        >
-                          {isProcessing ? 'Processando...' : 'Confirmar Minha Reserva Agora'}
-                        </button>
                       </div>
                     )}
+
                   </div>
                 </div>
 
@@ -571,7 +529,7 @@ const Cart = () => {
                           Processando...
                         </>
                       ) : (
-                        form.payment_method === 'Reserva na Loja' ? 'Confirmar Reserva' : 'Confirmar Pedido'
+                        form.payment_method === 'Dinheiro' ? 'Confirmar Pedido' : 'Confirmar Pagamento'
                       )}
                     </button>
                   </div>

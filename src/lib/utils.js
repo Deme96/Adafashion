@@ -112,7 +112,7 @@ export const PURCHASE_STATUS = {
 /**
  * Payment methods
  */
-export const PAYMENT_METHODS = ['Orange Money', 'Teletacu', 'Visa'];
+export const PAYMENT_METHODS = ['Dinheiro', 'Teletacu', 'Orange Money', 'Transferência bancária'];
 
 /**
  * Get initials from a name

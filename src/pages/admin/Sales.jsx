@@ -2,7 +2,7 @@
 // Render deploy trigger comment - v2
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../lib/api';
-import { formatCurrency, formatDate, ORDER_STATUS } from '../../lib/utils';
+import { formatCurrency, formatDate, ORDER_STATUS, PAYMENT_METHODS } from '../../lib/utils';
 import { DollarSign, Search, Filter, Download, Printer, ShoppingBag, Package, Plus, Eye, CheckCircle, XCircle } from 'lucide-react';
 import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
@@ -232,9 +232,7 @@ const Sales = () => {
             className="pl-4 pr-8 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-rose-300 outline-none"
           >
             <option value="all">Pagamento: Todos</option>
-            <option value="Orange Money">Orange Money</option>
-            <option value="Teletacu">Teletacu</option>
-            <option value="Visa">Visa</option>
+            {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <select
             value={dateFilter}
@@ -384,9 +382,7 @@ const Sales = () => {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">Método de Pagamento</label>
               <select className="w-full p-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-rose-300 bg-white" value={newSale.payment_method} onChange={e => setNewSale({...newSale, payment_method: e.target.value})}>
-                <option value="Orange Money">Orange Money</option>
-                <option value="Teletacu">Teletacu</option>
-                <option value="Visa">Visa</option>
+                {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div>
