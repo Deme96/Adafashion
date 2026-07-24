@@ -46,7 +46,7 @@ const Reservations = () => {
   const loadReservations = async () => {
     try {
       const allOrders = await api.getAllOrders();
-      const reservations = (allOrders || []).filter(o => o.payment_method === 'Reserva na Loja')
+      const reservations = (allOrders || []).filter(o => String(o.payment_method).startsWith('Reserva'))
                                     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setOrders(reservations);
     } catch (error) {
@@ -149,9 +149,9 @@ const Reservations = () => {
     if (!selectedOrder) return;
     try {
       await api.updateOrder(selectedOrder.id, { 
-        payment_method: selectedPaymentMethod,
+        payment_method: `Reserva - ${selectedPaymentMethod}`,
         payment_status: 'paid',
-        status: 'Entregue'
+        status: 'Concluído'
       });
       setIsPaymentModalOpen(false);
       setSelectedOrder(null);

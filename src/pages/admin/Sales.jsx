@@ -58,7 +58,7 @@ const Sales = () => {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      if (order.payment_method === 'Reserva na Loja' && order.payment_status !== 'paid') return false;
+      if (String(order.payment_method).startsWith('Reserva') && order.payment_status !== 'paid' && order.status !== 'Entregue' && order.status !== 'delivered' && order.status !== 'Concluído') return false;
       const matchesSearch = 
         order.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
         String(order.id ?? '').toLowerCase().includes(search.toLowerCase());
