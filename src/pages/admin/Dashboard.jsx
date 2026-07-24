@@ -36,7 +36,7 @@ const Dashboard = () => {
 
   // ---- Stats ----
   const stats = useMemo(() => {
-    const delivered = orders.filter(o => o.status === 'Entregue' || o.status === 'delivered' || o.status === 'Concluído' || o.payment_status === 'paid');
+    const delivered = orders.filter(o => o.status === 'Entregue' || o.status === 'delivered' || o.status === 'Concluído' || o.status === 'Pago' || o.payment_status === 'paid');
     const pending = orders.filter(o => o.status === 'Pendente' || o.status === 'pending');
     const totalRevenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
     const totalExpenses = purchases
@@ -93,7 +93,7 @@ const Dashboard = () => {
       // Usually all non-cancelled orders are counted, but let's stick to the existing logic which counts all non-cancelled.
       // Wait, the user specifically said "todas as vendas ativas com status entregue sejam contadas com items vendidos".
       // This means ONLY "Entregue" or "delivered" or active paid should be counted for items sold!
-      if (order.status !== 'Entregue' && order.status !== 'delivered' && order.payment_status !== 'paid' && order.status !== 'Concluído') return;
+      if (order.status !== 'Entregue' && order.status !== 'delivered' && order.status !== 'Pago' && order.payment_status !== 'paid' && order.status !== 'Concluído') return;
 
       (order.items || []).forEach(item => {
         const name = item.product_name || item.name || 'Desconhecido';
