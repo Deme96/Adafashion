@@ -106,12 +106,21 @@ const Sales = () => {
     const counts = {};
     validOrders.forEach(o => {
       (o.items || []).forEach(item => {
-        const prod = products.find(p => p.name === (item.product_name || item.name) || p.id === item.product_id);
-        const cat = prod?.category || 'Diversos';
+        // 1st: use category stored directly on item
+        let cat = item.category;
+        if (!cat) {
+          // 2nd: lookup product by id or name (case-insensitive, type-tolerant)
+          const itemName = (item.product_name || item.name || '').toLowerCase().trim();
+          const itemProdId = String(item.product_id ?? '');
+          const prod = products.find(p =>
+            String(p.id) === itemProdId ||
+            p.name?.toLowerCase().trim() === itemName
+          );
+          cat = prod?.category || 'Diversos';
+        }
         counts[cat] = (counts[cat] || 0) + (Number(item.quantity) || 1);
       });
     });
-    // Sort by count descending
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   }, [validOrders, products]);
   // Auto calculate total for manual sales
@@ -133,12 +142,12 @@ const Sales = () => {
        const prod = products.find(p => p.id === newSale.product_id);
        if (prod) {
          const price = prod.sale_price || prod.price;
-         items = [{ product_id: prod.id, name: prod.name, quantity: Number(newSale.quantity), price }];
+         items = [{ product_id: prod.id, product_name: prod.name, name: prod.name, category: prod.category || 'Diversos', quantity: Number(newSale.quantity), price }];
          // Reduce stock
          await api.updateProduct(prod.id, { stock: Math.max(0, prod.stock - Number(newSale.quantity)) });
        }
     } else {
-       items = [{ name: 'Venda Manual Avulsa', quantity: 1, price: Number(newSale.total) }];
+       items = [{ name: 'Venda Manual Avulsa', product_name: 'Venda Manual Avulsa', category: 'Diversos', quantity: 1, price: Number(newSale.total) }];
     }
     
     const saleData = {

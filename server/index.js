@@ -448,7 +448,26 @@ const mapActivityLog = (row) => ({...row});
 app.get('/api/orders', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-    res.json(rows.map(mapOrder));
+    const [productRows] = await pool.query('SELECT id, name, category FROM products');
+    const productMap = {};
+    productRows.forEach(p => { productMap[String(p.id)] = p; });
+
+    const orders = rows.map(row => {
+      const order = mapOrder(row);
+      order.items = (order.items || []).map(item => {
+        if (item.category) return item; // already has category
+        const productId = String(item.product_id || item.id || '');
+        const itemName = (item.product_name || item.name || '').toLowerCase().trim();
+        // Try match by id first, then by name
+        let prod = productMap[productId];
+        if (!prod) {
+          prod = productRows.find(p => p.name?.toLowerCase().trim() === itemName);
+        }
+        return { ...item, category: prod?.category || 'Diversos' };
+      });
+      return order;
+    });
+    res.json(orders);
   } catch (error) {
     console.error('Error fetching orders', error);
     res.status(500).json({ message: 'Failed to fetch orders' });
@@ -458,9 +477,21 @@ app.get('/api/orders', async (req, res) => {
 app.get('/api/orders/:id', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [req.params.id]);
-    const order = rows[0];
-    if (!order) return res.status(404).json({ message: 'Not found' });
-    res.json(mapOrder(order));
+    const orderRow = rows[0];
+    if (!orderRow) return res.status(404).json({ message: 'Not found' });
+    const [productRows] = await pool.query('SELECT id, name, category FROM products');
+    const productMap = {};
+    productRows.forEach(p => { productMap[String(p.id)] = p; });
+    const order = mapOrder(orderRow);
+    order.items = (order.items || []).map(item => {
+      if (item.category) return item;
+      const productId = String(item.product_id || item.id || '');
+      const itemName = (item.product_name || item.name || '').toLowerCase().trim();
+      let prod = productMap[productId];
+      if (!prod) prod = productRows.find(p => p.name?.toLowerCase().trim() === itemName);
+      return { ...item, category: prod?.category || 'Diversos' };
+    });
+    res.json(order);
   } catch (error) {
     console.error('Error fetching order', error);
     res.status(500).json({ message: 'Failed to fetch order' });
