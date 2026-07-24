@@ -33,6 +33,16 @@ body {
   font-family: "Great Vibes", cursive;
   font-weight: 400;
   letter-spacing: 0.01em;
+  display: inline-block; /* required for ::first-letter on span elements */
+}
+
+/* Decorative first letter — replicates the ornate capital "A" of Edwardian Script */
+.font-fashion::first-letter {
+  font-size: 1.45em;
+  line-height: 0.7;
+  margin-right: -0.02em;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* Custom scrollbar */
