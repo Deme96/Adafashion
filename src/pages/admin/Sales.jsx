@@ -100,8 +100,20 @@ const Sales = () => {
     (o.status === 'Entregue' || o.status === 'delivered' || o.status === 'Concluído' || o.status === 'Pago' || o.payment_status === 'paid')
   );
   const totalRevenue = useMemo(() => validOrders.reduce((s, o) => s + (o.total || 0), 0), [validOrders]);
-  const totalItems = useMemo(() => validOrders.reduce((s, o) => s + (o.items || []).reduce((si, i) => si + (i.quantity || 1), 0), 0), [validOrders]);
+  const totalItems = useMemo(() => validOrders.reduce((s, o) => s + (o.items || []).reduce((si, i) => si + (Number(i.quantity) || 1), 0), 0), [validOrders]);
 
+  const itemsByCategory = useMemo(() => {
+    const counts = {};
+    validOrders.forEach(o => {
+      (o.items || []).forEach(item => {
+        const prod = products.find(p => p.name === (item.product_name || item.name) || p.id === item.product_id);
+        const cat = prod?.category || 'Diversos';
+        counts[cat] = (counts[cat] || 0) + (Number(item.quantity) || 1);
+      });
+    });
+    // Sort by count descending
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }, [validOrders, products]);
   // Auto calculate total for manual sales
   useEffect(() => {
     if (newSale.product_id) {
@@ -222,11 +234,33 @@ const Sales = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 print-hide">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print-hide">
         <StatsCard icon={ShoppingBag} label="Vendas Ativas" value={validOrders.length} color="green" />
         <StatsCard icon={DollarSign} label="Receita Estimada" value={formatCurrency(totalRevenue)} color="blue" />
-        <StatsCard icon={Package} label="Itens Vendidos" value={totalItems} color="purple" />
+      </div>
+
+      {/* Items by Category Stats */}
+      <div className="bg-white rounded-2xl border border-pink-100 p-5 print-hide shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Package size={18} className="text-purple-500" />
+            Itens Vendidos por Categoria
+          </h3>
+          <span className="bg-purple-100 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+            Total Geral: {totalItems} itens
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {itemsByCategory.map(([cat, qty]) => (
+            <div key={cat} className="px-4 py-2.5 bg-purple-50/50 rounded-xl border border-purple-100/60 flex items-center gap-3 hover:bg-purple-50 transition-colors">
+              <span className="text-sm font-medium text-purple-900">{cat}</span>
+              <span className="bg-purple-200 text-purple-800 text-xs font-bold px-2 py-0.5 rounded-md min-w-[24px] text-center">{qty}</span>
+            </div>
+          ))}
+          {itemsByCategory.length === 0 && (
+            <span className="text-sm text-gray-400 italic py-2">Nenhum item vendido no filtro atual</span>
+          )}
+        </div>
       </div>
 
       {/* Print Area — only this block prints */}
