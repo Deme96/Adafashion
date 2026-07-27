@@ -1588,7 +1588,7 @@ const initializeApp = async () => {
   initializationPromise = (async () => {
     try {
       await ensureSchema();
-      await seedDefaultData();
+      // await seedDefaultData(); // Auto-seeding is disabled
     } catch (error) {
       console.error('Failed to initialize app data', error);
     }
