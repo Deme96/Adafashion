@@ -113,7 +113,9 @@ const Finances = () => {
   const getCurrentData = () => {
     let data = [];
     switch (reportTab) {
-      case 'Movimentações de Caixa': data = dailyCashFlows; break;
+      case 'Movimentações de Caixa': 
+        data = [...dailyCashFlows, ...cashFlows].sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)); 
+        break;
       case 'Despesas c/ Pessoal': data = staffExpenses; break;
       case 'Logística': data = logistics; break;
       case 'Renda da Loja': data = storeRent; break;
@@ -150,7 +152,12 @@ const Finances = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     const type = getCollection();
-    const data = { ...form, amount: parseFloat(form.amount) || 0, type };
+    const data = { 
+      ...form, 
+      amount: parseFloat(form.amount) || 0, 
+      date: form.date || new Date().toISOString().slice(0, 10),
+      type 
+    };
     if (editing) {
       await api.updateFinanceEntry(editing.id, data);
     } else {
@@ -223,7 +230,7 @@ const Finances = () => {
     return null;
   };
 
-  const reportTotal = getCurrentData().reduce((s, item) => s + (item.amount || 0), 0);
+  const reportTotal = getCurrentData().reduce((s, item) => s + (parseFloat(item.amount) || 0), 0);
 
   const getReportIcon = () => {
     switch (reportTab) {

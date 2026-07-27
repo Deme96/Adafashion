@@ -66,21 +66,22 @@ app.use(bodyParser.json({ limit: '10mb' }));
       console.log('Migrated finance_entries table.');
     }
   } catch (err) {
-    if (err.message && err.message.includes('type "bigint" does not exist')) {
-      // Handle Postgres vs MySQL differences manually or let it fail gracefully if already exists
-      try {
-        await pool.query(`CREATE TABLE IF NOT EXISTS finance_entries (
-          id SERIAL PRIMARY KEY,
-          type VARCHAR(50) NOT NULL,
-          description VARCHAR(255) NOT NULL,
-          amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-          date DATE NOT NULL,
-          category VARCHAR(100) DEFAULT NULL,
-          notes TEXT DEFAULT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`);
-      } catch(e) {}
+    // If MySQL syntax fails (or table exists), try Postgres syntax
+    try {
+      await pool.query(`CREATE TABLE IF NOT EXISTS finance_entries (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        description VARCHAR(255) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        date DATE NOT NULL,
+        category VARCHAR(100) DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      console.log('Migrated finance_entries table (Postgres).');
+    } catch(e) {
+      console.error('Migration error for finance_entries:', e.message);
     }
   }
 })();
