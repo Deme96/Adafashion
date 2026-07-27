@@ -169,7 +169,7 @@ const summarizePayload = (value) => {
 
 const logApiOperation = async (req, res, startedAt) => {
   try {
-    if (!req.path.startsWith('/api') || req.path === '/api/activity-logs' || req.method === 'OPTIONS') {
+    if (!req.path.startsWith('/api') || req.path === '/api/activity-logs' || req.method === 'OPTIONS' || req.method === 'GET') {
       return;
     }
 
