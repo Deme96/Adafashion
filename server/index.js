@@ -177,13 +177,41 @@ const logApiOperation = async (req, res, startedAt) => {
     const payload = req.method !== 'GET' && req.method !== 'DELETE' ? req.body : null;
     const entityType = req.path.split('/').filter(Boolean)[1] || 'api';
     const entityId = req.params?.id || req.body?.id || null;
-    const action = `${req.method} ${req.path}`;
-    const details = [
-      `status=${res.statusCode}`,
-      `duration=${Date.now() - startedAt}ms`,
-      payload ? `body=${summarizePayload(payload)}` : null,
-      req.query && Object.keys(req.query).length ? `query=${JSON.stringify(req.query)}` : null,
-    ].filter(Boolean).join(' | ');
+    
+    const translateEntity = (entity) => {
+      const map = {
+        'reservations': 'Reserva',
+        'finance-entries': 'Registo Financeiro',
+        'products': 'Produto',
+        'orders': 'Encomenda',
+        'customers': 'Cliente',
+        'users': 'Utilizador',
+        'auth': 'Autenticação',
+        'store-settings': 'Configuração da Loja',
+        'news': 'Notícia',
+        'videos': 'Vídeo',
+        'stock-movements': 'Movimento de Stock'
+      };
+      return map[entity] || entity;
+    };
+
+    const entityName = translateEntity(entityType);
+    let action = `${req.method} ${req.path}`;
+    
+    if (req.method === 'POST') action = `Registo Criado: ${entityName}`;
+    else if (req.method === 'PUT' || req.method === 'PATCH') action = `Registo Atualizado: ${entityName}`;
+    else if (req.method === 'DELETE') action = `Registo Removido: ${entityName}`;
+    else if (req.method === 'GET') action = `Consulta de Dados: ${entityName}`;
+
+    const statusText = res.statusCode >= 200 && res.statusCode < 300 ? 'Sucesso' : 'Falha';
+    let details = `Operação concluída com ${statusText} (Código ${res.statusCode}) em ${Date.now() - startedAt}ms.`;
+    
+    if (payload) {
+      details += ` | Dados fornecidos: ${summarizePayload(payload)}`;
+    }
+    if (req.query && Object.keys(req.query).length) {
+      details += ` | Parâmetros de pesquisa: ${JSON.stringify(req.query)}`;
+    }
 
     await pool.query(
       'INSERT INTO activity_logs (action, details, user_name, entity_type, entity_id) VALUES (?, ?, ?, ?, ?)',
