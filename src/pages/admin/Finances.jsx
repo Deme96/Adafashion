@@ -56,10 +56,13 @@ const Finances = () => {
 
   const loadReportData = async () => {
     try {
-      // These would need to be added to the backend API if needed
-      setStaffExpenses([]);
-      setLogistics([]);
-      setStoreRent([]);
+      const entries = await api.getAllFinanceEntries();
+      if (entries) {
+        setStaffExpenses(entries.filter(e => e.type === 'finance_staff'));
+        setLogistics(entries.filter(e => e.type === 'finance_logistics'));
+        setStoreRent(entries.filter(e => e.type === 'finance_rent'));
+        setCashFlows(entries.filter(e => e.type === 'finance_cash_flows'));
+      }
     } catch (error) {
       console.error('Error loading report data:', error);
     }
@@ -144,26 +147,22 @@ const Finances = () => {
     setModalOpen(true);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    const collection = getCollection();
-    const data = { ...form, amount: parseFloat(form.amount) || 0 };
+    const type = getCollection();
+    const data = { ...form, amount: parseFloat(form.amount) || 0, type };
     if (editing) {
-      // TODO: Implement backend API for finance entries if needed
-      // await api.updateFinanceEntry(editing.id, data);
+      await api.updateFinanceEntry(editing.id, data);
     } else {
-      // TODO: Implement backend API for finance entries if needed
-      // const newEntry = await api.createFinanceEntry(data);
+      await api.createFinanceEntry(data);
     }
     setModalOpen(false);
     loadReportData();
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Excluir este registro?')) {
-      const collection = getCollection();
-      // TODO: Implement backend API for finance entries if needed
-      // await api.deleteFinanceEntry(id);
+      await api.deleteFinanceEntry(id);
       loadReportData();
     }
   };

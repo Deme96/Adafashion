@@ -270,6 +270,23 @@ export const api = {
   async createReservation(data) {
     return await apiCall('POST', '/reservations', data);
   },
+
+  // FINANCE ENTRIES
+  async getAllFinanceEntries() {
+    return await apiCall('GET', '/finance-entries') || [];
+  },
+
+  async createFinanceEntry(data) {
+    return await apiCall('POST', '/finance-entries', data);
+  },
+
+  async updateFinanceEntry(id, data) {
+    return await apiCall('PUT', `/finance-entries/${id}`, data);
+  },
+
+  async deleteFinanceEntry(id) {
+    return await apiCall('DELETE', `/finance-entries/${id}`);
+  },
 };
 
 export default api;

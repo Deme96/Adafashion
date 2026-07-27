@@ -40,6 +40,101 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: '10mb' }));
 
+// Migrations and new routes
+(async () => {
+  try {
+    if (pool) {
+      await pool.query('ALTER TABLE customers ADD COLUMN account_type VARCHAR(50) DEFAULT \'normal\'');
+      console.log('Migrated customers table: added account_type column.');
+    }
+  } catch (err) {}
+  
+  try {
+    if (pool) {
+      await pool.query(`CREATE TABLE IF NOT EXISTS finance_entries (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        type VARCHAR(50) NOT NULL,
+        description VARCHAR(255) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        date DATE NOT NULL,
+        category VARCHAR(100) DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      )`);
+      console.log('Migrated finance_entries table.');
+    }
+  } catch (err) {
+    if (err.message && err.message.includes('type "bigint" does not exist')) {
+      // Handle Postgres vs MySQL differences manually or let it fail gracefully if already exists
+      try {
+        await pool.query(`CREATE TABLE IF NOT EXISTS finance_entries (
+          id SERIAL PRIMARY KEY,
+          type VARCHAR(50) NOT NULL,
+          description VARCHAR(255) NOT NULL,
+          amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+          date DATE NOT NULL,
+          category VARCHAR(100) DEFAULT NULL,
+          notes TEXT DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`);
+      } catch(e) {}
+    }
+  }
+})();
+
+// Finance Entries endpoints
+app.get('/api/finance-entries', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM finance_entries ORDER BY date DESC, created_at DESC');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching finance entries', error);
+    res.status(500).json({ error: 'Failed to fetch' });
+  }
+});
+
+app.post('/api/finance-entries', async (req, res) => {
+  try {
+    const { type, description, amount, date, category, notes } = req.body;
+    const [result] = await pool.query(
+      'INSERT INTO finance_entries (type, description, amount, date, category, notes) VALUES (?, ?, ?, ?, ?, ?)',
+      [type, description, amount, date, category, notes]
+    );
+    res.status(201).json({ id: result.insertId || result.id || Date.now(), type, description, amount, date, category, notes });
+  } catch (error) {
+    console.error('Error creating finance entry', error);
+    res.status(500).json({ error: 'Failed to create' });
+  }
+});
+
+app.put('/api/finance-entries/:id', async (req, res) => {
+  try {
+    const { type, description, amount, date, category, notes } = req.body;
+    await pool.query(
+      'UPDATE finance_entries SET type = ?, description = ?, amount = ?, date = ?, category = ?, notes = ? WHERE id = ?',
+      [type, description, amount, date, category, notes, req.params.id]
+    );
+    res.json({ id: req.params.id, type, description, amount, date, category, notes });
+  } catch (error) {
+    console.error('Error updating finance entry', error);
+    res.status(500).json({ error: 'Failed to update' });
+  }
+});
+
+app.delete('/api/finance-entries/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM finance_entries WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting finance entry', error);
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
+
 const sanitizeValue = (value, maxLength = 1200) => {
   if (value === null || value === undefined) return null;
   if (typeof value === 'string') {
@@ -425,9 +520,9 @@ const mapVideo = (row) => ({
   is_published: Boolean(row.is_published),
 });
 
-const mapCarouselPhoto = (row) => ({...row});
+const mapCarouselPhoto = (row) => ({ ...row });
 
-const mapStoreSettings = (row) => ({...row});
+const mapStoreSettings = (row) => ({ ...row });
 
 const mapOrder = (row) => ({
   ...row,
@@ -445,7 +540,7 @@ const mapUser = (row) => ({
   role: normalizeUserRole(row?.role),
 });
 
-const mapActivityLog = (row) => ({...row});
+const mapActivityLog = (row) => ({ ...row });
 
 app.get('/api/orders', async (req, res) => {
   try {
@@ -553,7 +648,7 @@ app.post('/api/orders', async (req, res) => {
 app.put('/api/orders/:id', async (req, res) => {
   try {
     const { status, payment_status, total, notes, items, customer_name, customer_email, customer_phone, payment_method } = req.body;
-    
+
     // Build dynamic update query - only update fields that were sent
     const updates = [];
     const values = [];
@@ -1043,7 +1138,7 @@ app.post('/api/users', async (req, res) => {
 
     const normalizedRole = normalizeUserRole(role || 'Vendedor');
     const [result] = await pool.query('INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)', [name, normalizedEmail, password, normalizedRole, 'active']);
-    
+
     // Fetch newly created user by ID or Email as fallback
     const insertId = result.insertId || (result.rows && result.rows[0] ? result.rows[0].id : null);
     let rows = [];
@@ -1052,7 +1147,7 @@ app.post('/api/users', async (req, res) => {
     } else {
       [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE email = ? ORDER BY created_at DESC LIMIT 1', [email]);
     }
-    
+
     const newUser = rows[0];
     if (newUser) {
       await logActivity('Criação', `Novo usuário registrado: ${name} (${normalizedRole})`, 'Sistema', 'Usuários', newUser.id);
@@ -1083,8 +1178,8 @@ app.put('/api/users/:id', async (req, res) => {
       if (existingCustomer.length > 0) {
         return res.status(409).json({ message: 'Este e-mail já está cadastrado no sistema (Clientes/Zona di Bideras).' });
       }
-      updates.push('email = ?'); 
-      values.push(normalizedEmail); 
+      updates.push('email = ?');
+      values.push(normalizedEmail);
     }
     if (password) { updates.push('password_hash = ?'); values.push(password); }
     if (role !== undefined) { updates.push('role = ?'); values.push(normalizeUserRole(role)); }
@@ -1345,13 +1440,13 @@ const seedDefaultData = async () => {
   const [orderRows] = await pool.query('SELECT id FROM orders LIMIT 1');
   if (orderRows.length === 0) {
     const orders = [
-      [1, 'Aminata Diallo', 'aminata@email.com', '+221 77 123 4567', 'Dakar, Plateau, Rue 10', null, 'ORD-20260701-001', 'delivered', 'Mobile Money', 'paid', 18500, 0, 18500, 'Encomenda entregue sem problemas.', JSON.stringify([{product_name:'Robe Wax Ankara',quantity:1,price:18500}])],
-      [2, 'Ousmane Traoré', 'ousmane@email.com', '+223 76 234 5678', 'Bamako, ACI 2000', null, 'ORD-20260703-002', 'delivered', 'Transferência', 'paid', 22000, 2000, 20000, '', JSON.stringify([{product_name:'Chemise Bazin Brodée',quantity:1,price:22000}])],
-      [3, 'Fatou Camara', 'fatou@email.com', '+224 62 345 6789', 'Conakry, Kaloum', null, 'ORD-20260705-003', 'shipped', 'Mobile Money', 'paid', 41000, 0, 41000, 'Enviar por transportadora rápida.', JSON.stringify([{product_name:'Ensemble Pagne Moderne',quantity:1,price:25000},{product_name:'Pantalon Kente Slim',quantity:1,price:16000}])],
-      [4, 'Ibrahim Koné', 'ibrahim@email.com', '+225 07 456 7890', 'Abidjan, Cocody', null, 'ORD-20260708-004', 'confirmed', 'Cartão', 'paid', 42500, 5000, 37500, 'Cliente grossista — desconto aplicado.', JSON.stringify([{product_name:'T-Shirt Afro Urban',quantity:5,price:8500}])],
-      [5, 'Aïssatou Ba', 'aissatou@email.com', '+221 78 567 8901', 'Saint-Louis, Quartier Nord', null, 'ORD-20260710-005', 'pending', 'Reserva na Loja', 'pending', 32000, 0, 32000, 'Cliente vai buscar na loja.', JSON.stringify([{product_name:'Sac à Main Cuir Tressé',quantity:1,price:32000}])],
-      [6, 'Moussa Sow', 'moussa@email.com', '+222 46 678 9012', 'Nouakchott, Tevragh Zeina', null, 'ORD-20260712-006', 'pending', 'Mobile Money', 'pending', 28000, 0, 28000, '', JSON.stringify([{product_name:'Sandales Perles Massaï',quantity:2,price:14000}])],
-      [7, 'Mariam Touré', 'mariam@email.com', '+223 66 789 0123', 'Bamako, Badalabougou', null, 'ORD-20260715-007', 'cancelled', 'Transferência', 'refunded', 25000, 0, 25000, 'Cliente cancelou — reembolso feito.', JSON.stringify([{product_name:'Ensemble Pagne Moderne',quantity:1,price:25000}])],
+      [1, 'Aminata Diallo', 'aminata@email.com', '+221 77 123 4567', 'Dakar, Plateau, Rue 10', null, 'ORD-20260701-001', 'delivered', 'Mobile Money', 'paid', 18500, 0, 18500, 'Encomenda entregue sem problemas.', JSON.stringify([{ product_name: 'Robe Wax Ankara', quantity: 1, price: 18500 }])],
+      [2, 'Ousmane Traoré', 'ousmane@email.com', '+223 76 234 5678', 'Bamako, ACI 2000', null, 'ORD-20260703-002', 'delivered', 'Transferência', 'paid', 22000, 2000, 20000, '', JSON.stringify([{ product_name: 'Chemise Bazin Brodée', quantity: 1, price: 22000 }])],
+      [3, 'Fatou Camara', 'fatou@email.com', '+224 62 345 6789', 'Conakry, Kaloum', null, 'ORD-20260705-003', 'shipped', 'Mobile Money', 'paid', 41000, 0, 41000, 'Enviar por transportadora rápida.', JSON.stringify([{ product_name: 'Ensemble Pagne Moderne', quantity: 1, price: 25000 }, { product_name: 'Pantalon Kente Slim', quantity: 1, price: 16000 }])],
+      [4, 'Ibrahim Koné', 'ibrahim@email.com', '+225 07 456 7890', 'Abidjan, Cocody', null, 'ORD-20260708-004', 'confirmed', 'Cartão', 'paid', 42500, 5000, 37500, 'Cliente grossista — desconto aplicado.', JSON.stringify([{ product_name: 'T-Shirt Afro Urban', quantity: 5, price: 8500 }])],
+      [5, 'Aïssatou Ba', 'aissatou@email.com', '+221 78 567 8901', 'Saint-Louis, Quartier Nord', null, 'ORD-20260710-005', 'pending', 'Reserva na Loja', 'pending', 32000, 0, 32000, 'Cliente vai buscar na loja.', JSON.stringify([{ product_name: 'Sac à Main Cuir Tressé', quantity: 1, price: 32000 }])],
+      [6, 'Moussa Sow', 'moussa@email.com', '+222 46 678 9012', 'Nouakchott, Tevragh Zeina', null, 'ORD-20260712-006', 'pending', 'Mobile Money', 'pending', 28000, 0, 28000, '', JSON.stringify([{ product_name: 'Sandales Perles Massaï', quantity: 2, price: 14000 }])],
+      [7, 'Mariam Touré', 'mariam@email.com', '+223 66 789 0123', 'Bamako, Badalabougou', null, 'ORD-20260715-007', 'cancelled', 'Transferência', 'refunded', 25000, 0, 25000, 'Cliente cancelou — reembolso feito.', JSON.stringify([{ product_name: 'Ensemble Pagne Moderne', quantity: 1, price: 25000 }])],
     ];
     for (const o of orders) {
       await pool.query(
@@ -1366,13 +1461,13 @@ const seedDefaultData = async () => {
   const [promoRows] = await pool.query('SELECT id FROM promotions LIMIT 1');
   if (promoRows.length === 0) {
     const promotions = [
-      ['Soldes de Bienvenue', 'Profitez de 15% de réduction sur votre première commande. Offre valable sur tout le catalogue.', 15, '2026-07-01', '2026-09-30', 1, JSON.stringify(['Vestidos','Camisetas','Calças']), JSON.stringify([]), 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&h=400&fit=crop'],
-      ['Flash Sale Wax', 'Vente flash exceptionnelle sur tous les articles en tissu wax. Durée limitée!', 25, '2026-07-15', '2026-07-31', 1, JSON.stringify(['Vestidos','Conjuntos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1200&h=400&fit=crop'],
+      ['Soldes de Bienvenue', 'Profitez de 15% de réduction sur votre première commande. Offre valable sur tout le catalogue.', 15, '2026-07-01', '2026-09-30', 1, JSON.stringify(['Vestidos', 'Camisetas', 'Calças']), JSON.stringify([]), 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200&h=400&fit=crop'],
+      ['Flash Sale Wax', 'Vente flash exceptionnelle sur tous les articles en tissu wax. Durée limitée!', 25, '2026-07-15', '2026-07-31', 1, JSON.stringify(['Vestidos', 'Conjuntos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1200&h=400&fit=crop'],
       ['Promo Bazin', 'Collection bazin brodé à prix réduit. Qualité premium, prix accessible.', 20, '2026-08-01', '2026-08-31', 1, JSON.stringify(['Camisas']), JSON.stringify([]), 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&h=400&fit=crop'],
-      ['Offre Accessoires', 'Accessoires artisanaux à -30%. Sacs, bijoux et sandales perlées.', 30, '2026-07-01', '2026-12-31', 1, JSON.stringify(['Acessórios','Sapatos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&h=400&fit=crop'],
-      ['Rentrée Scolaire', 'Tenues pour la rentrée scolaire: uniformes, chemises et pantalons à prix réduit.', 10, '2026-09-01', '2026-09-30', 1, JSON.stringify(['Camisetas','Calças']), JSON.stringify([]), 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&h=400&fit=crop'],
-      ['Fête du Ramadan', 'Collection spéciale pour les fêtes. Bazin et ensembles de cérémonie à prix festif.', 20, '2026-03-01', '2026-03-31', 0, JSON.stringify(['Camisas','Conjuntos','Vestidos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1495121605193-b116b5b9c5ee?w=1200&h=400&fit=crop'],
-      ['Black Friday Afrique', 'Le Black Friday arrive en Afrique! Jusqu\'à 35% de réduction sur une sélection de produits.', 35, '2026-11-25', '2026-11-30', 0, JSON.stringify(['Vestidos','Camisetas','Calças','Acessórios','Sapatos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&h=400&fit=crop'],
+      ['Offre Accessoires', 'Accessoires artisanaux à -30%. Sacs, bijoux et sandales perlées.', 30, '2026-07-01', '2026-12-31', 1, JSON.stringify(['Acessórios', 'Sapatos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&h=400&fit=crop'],
+      ['Rentrée Scolaire', 'Tenues pour la rentrée scolaire: uniformes, chemises et pantalons à prix réduit.', 10, '2026-09-01', '2026-09-30', 1, JSON.stringify(['Camisetas', 'Calças']), JSON.stringify([]), 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=1200&h=400&fit=crop'],
+      ['Fête du Ramadan', 'Collection spéciale pour les fêtes. Bazin et ensembles de cérémonie à prix festif.', 20, '2026-03-01', '2026-03-31', 0, JSON.stringify(['Camisas', 'Conjuntos', 'Vestidos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1495121605193-b116b5b9c5ee?w=1200&h=400&fit=crop'],
+      ['Black Friday Afrique', 'Le Black Friday arrive en Afrique! Jusqu\'à 35% de réduction sur une sélection de produits.', 35, '2026-11-25', '2026-11-30', 0, JSON.stringify(['Vestidos', 'Camisetas', 'Calças', 'Acessórios', 'Sapatos']), JSON.stringify([]), 'https://images.unsplash.com/photo-1607082349566-187342175e2f?w=1200&h=400&fit=crop'],
     ];
     for (const p of promotions) {
       await pool.query(
