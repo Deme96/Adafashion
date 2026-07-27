@@ -69,7 +69,7 @@ const Footer = () => {
                 <li key={cat}>
                   <Link
                     to={`/produtos?categoria=${cat}`}
-                    className="text-sm text-rose-300/60 hover:text-white transition-colors"
+                    className="text-sm text-white/70 hover:text-white transition-colors"
                   >
                     {cat}
                   </Link>
@@ -88,11 +88,11 @@ const Footer = () => {
                 <Mail size={16} className="text-white/50 shrink-0" />
                 geral@adafashion.com
               </li>
-              <li className="flex items-center gap-3 text-sm text-rose-300/60">
+              <li className="flex items-center gap-3 text-sm text-white/70">
                 <Phone size={16} className="text-white/50 shrink-0" />
                 (+245) 955 38 29 03
               </li>
-              <li className="flex items-start gap-3 text-sm text-rose-300/60">
+              <li className="flex items-start gap-3 text-sm text-white/70">
                 <MapPin size={16} className="text-white/50 shrink-0 mt-0.5" />
                 Pilum - Entrada de ADPP, Bissau, GB
               </li>
@@ -106,10 +106,10 @@ const Footer = () => {
             © {new Date().getFullYear()} Ada Fashion — Casa de Bideras. Todos os direitos reservados.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="text-xs text-rose-400/40 hover:text-rose-200 transition-colors">
+            <a href="#" className="text-xs text-white/60 hover:text-white transition-colors">
               Política de Privacidade
             </a>
-            <a href="#" className="text-xs text-rose-400/40 hover:text-rose-200 transition-colors">
+            <a href="#" className="text-xs text-white/60 hover:text-white transition-colors">
               Termos de Uso
             </a>
           </div>
