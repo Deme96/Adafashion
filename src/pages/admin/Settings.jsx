@@ -66,15 +66,21 @@ const Settings = () => {
 
   const saveSettings = async () => {
     try {
-      const existingSettings = await api.getAllStoreSettings();
-      if (existingSettings && existingSettings.length > 0) {
-        await api.updateStoreSettings(existingSettings[0].id, settings);
+      const payload = {
+        store_name: settings.store_name || 'Ada Fashion',
+        language: settings.language || 'pt-BR',
+        currency: settings.currency || 'XOF',
+      };
+      const result = await api.createStoreSettings(payload);
+      if (result) {
+        setSettings(result);
+        alert('Configurações salvas com sucesso!');
       } else {
-        await api.createStoreSettings(settings);
+        alert('Erro ao salvar configurações. Verifique se o servidor está ativo.');
       }
-      await loadAll();
     } catch (error) {
       console.error('Error saving settings:', error);
+      alert('Erro ao salvar configurações: ' + error.message);
     }
   };
 
