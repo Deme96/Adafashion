@@ -305,8 +305,6 @@ const Reservations = () => {
         isOpen={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleDeleteConfirmed}
-        title="Remover Reserva"
-        message={reservationToDelete ? `Tem certeza que deseja remover a reserva de ${reservationToDelete.customer_name || 'Cliente Balcão'} (ID #${getDisplayId(reservationToDelete.id)})?` : 'Tem certeza que deseja remover esta reserva?'}
       />
 
       {/* Order Details Modal */}

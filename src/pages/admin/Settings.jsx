@@ -197,6 +197,8 @@ const Settings = () => {
           await api.deleteNews(deleteTarget.id);
         } else if (deleteTarget.collection === 'carousel_photos') {
           await api.deleteCarouselPhoto(deleteTarget.id);
+        } else if (deleteTarget.collection === 'logs') {
+          await api.deleteAllActivityLogs();
         }
         await loadAll();
       } catch (error) {
@@ -433,11 +435,9 @@ const Settings = () => {
               </p>
               {logs.length > 0 && (
                 <button
-                  onClick={async () => {
-                    if (confirm('Tem certeza que deseja apagar TODOS os logs do sistema? Esta ação não pode ser desfeita.')) {
-                      await api.deleteAllActivityLogs();
-                      await loadAll();
-                    }
+                  onClick={() => {
+                    setDeleteTarget({ collection: 'logs' });
+                    setConfirmOpen(true);
                   }}
                   className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-600 transition-colors"
                 >
@@ -751,8 +751,7 @@ const Settings = () => {
         </div>
       </Modal>
 
-      <ConfirmDialog isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={handleDelete}
-        title="Excluir Item" message="Tem certeza que deseja excluir este item?" />
+      <ConfirmDialog isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={handleDelete} />
     </div>
   );
 };

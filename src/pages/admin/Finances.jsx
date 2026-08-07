@@ -10,6 +10,7 @@ import { formatCurrency, formatDate, getLastMonths, PAYMENT_METHODS } from '../.
 import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import PrintDateModal from '../../components/ui/PrintDateModal';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Printer } from 'lucide-react';
 
 const COLORS = ['#be185d', '#ec4899', '#f472b6', '#f9a8d4', '#fce7f3'];
@@ -36,6 +37,10 @@ const Finances = () => {
   // Print Modal State
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printDateRange, setPrintDateRange] = useState({ start: '', end: '' });
+
+  // Delete Confirm State
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -167,10 +172,17 @@ const Finances = () => {
     loadReportData();
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Excluir este registro?')) {
-      await api.deleteFinanceEntry(id);
+  const handleDelete = (id) => {
+    setItemToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (itemToDelete) {
+      await api.deleteFinanceEntry(itemToDelete);
       loadReportData();
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -513,19 +525,22 @@ const Finances = () => {
           </div>
         </form>
       </Modal>
-      {/* Print Date Modal */}
+
+      {/* Print Date Selection Modal */}
       <PrintDateModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
-        onConfirm={(start, end) => {
-          setPrintDateRange({ start, end });
+        onConfirm={(startDate, endDate) => {
+          setPrintDateRange({ start: startDate, end: endDate });
           setIsPrintModalOpen(false);
-          setTimeout(() => {
-            window.print();
-            // Optional: reset after print
-            // setPrintDateRange({ start: '', end: '' });
-          }, 100);
+          setTimeout(() => window.print(), 100);
         }}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={executeDelete}
       />
     </div>
   );

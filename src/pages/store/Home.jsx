@@ -30,7 +30,7 @@ const Home = () => {
       const products = await api.getAllProducts();
       const allProducts = products || [];
       setAllProducts(allProducts);
-      setFeaturedProducts(allProducts.filter(p => p.is_featured && p.is_active));
+      setFeaturedProducts(allProducts.filter(p => p.is_active));
       
       const promos = await api.getAllPromotions();
       setPromotions((promos || []).filter(p => p.is_active));

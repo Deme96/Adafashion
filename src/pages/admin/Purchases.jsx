@@ -6,6 +6,7 @@ import { formatCurrency, CATEGORIES } from '../../lib/utils';
 import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const emptyProduct = { 
   name: '', 
@@ -34,6 +35,10 @@ const Purchases = () => {
   
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [selectedStock, setSelectedStock] = useState(null);
+
+  // Delete Confirm State
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
   
   // Custom Filters
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -175,10 +180,17 @@ const Purchases = () => {
     await loadProducts();
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Excluir este produto/compra?')) {
-      await api.deleteProduct(id);
+  const handleDelete = (id) => {
+    setItemToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (itemToDelete) {
+      await api.deleteProduct(itemToDelete);
       await loadProducts();
+      setDeleteConfirmOpen(false);
+      setItemToDelete(null);
     }
   };
 
@@ -507,6 +519,12 @@ const Purchases = () => {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={executeDelete}
+      />
     </div>
   );
 };
