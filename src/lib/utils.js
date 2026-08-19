@@ -194,3 +194,27 @@ export const getLastMonths = (n = 6) => {
   }
   return months;
 };
+
+/**
+ * Convert video file to base64
+ */
+export const videoToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    if (!file.type.match(/video.*/)) {
+      reject(new Error("File is not a video"));
+      return;
+    }
+    
+    if (file.size > 15 * 1024 * 1024) { // 15MB limit
+      reject(new Error("Video muito grande. O tamanho máximo é 15MB."));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      resolve(readerEvent.target.result);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};

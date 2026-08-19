@@ -5,7 +5,7 @@ import api from '../../lib/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
-import { fileToBase64 } from '../../lib/utils';
+import { fileToBase64, videoToBase64 } from '../../lib/utils';
 
 const tabs = ['Geral', 'Usuários', 'Promoções', 'Vídeos', 'Notícias', 'Fotos Carousel', 'Logs'];
 
@@ -228,6 +228,18 @@ const Settings = () => {
     if (file) {
       const base64 = await fileToBase64(file);
       setForm(f => ({ ...f, banner_image: base64 }));
+    }
+  };
+
+  const handleLocalVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const base64 = await videoToBase64(file);
+        setForm(f => ({ ...f, url: base64 }));
+      } catch (error) {
+        alert(error.message);
+      }
     }
   };
 
@@ -647,11 +659,25 @@ const Settings = () => {
                 <input type="text" value={form.title || ''} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" />
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">URL Embed *</label>
-                <input type="url" value={form.url || ''} onChange={(e) => setForm(f => ({ ...f, url: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  placeholder="https://www.youtube.com/embed/..." />
+              {/* Abas para escolher entre URL ou Upload Local */}
+              <div className="space-y-3 p-4 bg-blue-50 rounded-xl mb-4">
+                <p className="text-sm font-semibold text-gray-700">Escolha uma opção para adicionar o vídeo:</p>
+                
+                {/* Opção 1: Upload Local */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">📁 Carregar do Computador</label>
+                  <input type="file" accept="video/mp4,video/webm,video/ogg" onChange={handleLocalVideoUpload} 
+                    className="text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg p-3 w-full cursor-pointer hover:border-rose-400 hover:bg-rose-50 transition-colors" />
+                  <p className="text-xs text-gray-500 mt-1">Formatos suportados: MP4, WebM (máx. 15MB)</p>
+                </div>
+
+                {/* Opção 2: URL */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🔗 Ou insira uma URL / Embed</label>
+                  <input type="url" value={form.url || ''} onChange={(e) => setForm(f => ({ ...f, url: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    placeholder="https://www.youtube.com/embed/..." />
+                </div>
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.is_published || false}
