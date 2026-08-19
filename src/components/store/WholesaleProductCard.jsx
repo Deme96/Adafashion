@@ -37,8 +37,7 @@ const WholesaleProductCard = ({ product }) => {
 
   return (
       <div
-        onClick={handleProceedToReserve}
-        className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col h-full hover:shadow-md transition-shadow cursor-pointer"
+        className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col h-full hover:shadow-md transition-shadow"
       >
         {/* Image Container */}
         <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-50">
@@ -157,9 +156,21 @@ const WholesaleProductCard = ({ product }) => {
                   Reserva mínima: {minQty} {minQty === 1 ? 'unidade' : 'unidades'}
                 </span>
               </div>
-              <div className="text-right">
-                <span className="text-xs text-gray-400">Subtotal: </span>
-                <span className="text-sm font-bold text-rose-600">{formatCurrency(product.price * quantity)}</span>
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  <span className="text-xs text-gray-400 block">Subtotal</span>
+                  <span className="text-sm font-bold text-rose-600">{formatCurrency(product.price * quantity)}</span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleProceedToReserve();
+                  }}
+                  disabled={isOutOfStock}
+                  className="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold py-2 px-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Reservar na Loja
+                </button>
               </div>
             </div>
           </div>

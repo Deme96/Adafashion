@@ -20,7 +20,6 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     { to: '/admin/vendas', icon: BarChart3, label: t('sales'), menuKey: 'sales' },
     { to: '/admin/reservas', icon: CalendarClock, label: 'Reservas', menuKey: 'reservations' },
     { to: '/admin/financas', icon: DollarSign, label: t('finances'), menuKey: 'finances' },
-    { to: '/admin/configuracoes', icon: Settings, label: t('settings'), menuKey: 'settings' },
   ].filter((item) => canAccessMenu(item.menuKey, user?.role));
 
   const handleLogout = () => {
@@ -88,7 +87,23 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         </nav>
 
         {/* Footer */}
-        <div className="px-4 py-4 border-t border-white/5">
+        <div className="px-4 py-4 border-t border-white/5 space-y-2">
+          {canAccessMenu('settings', user?.role) && (
+            <NavLink
+              to="/admin/configuracoes"
+              onClick={onClose}
+              className={({ isActive }) =>
+                `w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/80 hover:text-white hover:bg-white/20'
+                }`
+              }
+            >
+              <Settings size={16} />
+              {t('settings')}
+            </NavLink>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white/80 hover:text-white hover:bg-white/20 transition-colors"
