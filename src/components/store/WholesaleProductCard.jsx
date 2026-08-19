@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import { useCart } from '../../hooks/useCart';
@@ -40,11 +40,11 @@ const WholesaleProductCard = ({ product }) => {
         className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col h-full hover:shadow-md transition-shadow"
       >
         {/* Image Container */}
-        <div className="relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-50">
+        <Link to={`/produto/${product.id}`} className="block relative aspect-[4/3] sm:aspect-square overflow-hidden bg-gray-50 group">
           <img
             src={product.images?.[0] || 'https://via.placeholder.com/400x500?text=Sem+Imagem'}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
           {/* Out of stock overlay */}
@@ -55,16 +55,18 @@ const WholesaleProductCard = ({ product }) => {
               </span>
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Info */}
         <div className="p-4 flex flex-col flex-1">
           <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1">
             {product.category}
           </p>
-          <h3 className="text-sm font-bold text-gray-900 tracking-tight line-clamp-1 mb-2">
-            {product.name}
-          </h3>
+          <Link to={`/produto/${product.id}`}>
+            <h3 className="text-sm font-bold text-gray-900 tracking-tight line-clamp-1 mb-2 hover:text-rose-500 transition-colors">
+              {product.name}
+            </h3>
+          </Link>
           
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg font-black text-rose-500">

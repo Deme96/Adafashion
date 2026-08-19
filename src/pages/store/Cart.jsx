@@ -49,7 +49,7 @@ const Cart = () => {
     const action = location.state?.action || params.get('action');
 
     if (action === 'reserve') {
-      setForm(prev => ({ ...prev, payment_method: 'Dinheiro' }));
+      setForm(prev => ({ ...prev, payment_method: 'Reserva na Loja' }));
       setStep('checkout');
     } else if (action === 'buy') {
       setForm(prev => ({ ...prev, payment_method: 'Orange Money' }));
@@ -352,25 +352,31 @@ const Cart = () => {
                 {/* Payment */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">Forma de Pagamento</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {CHECKOUT_PAYMENT_METHODS.map(method => {
-                      const Icon = paymentIcons[method] || CreditCard;
-                      return (
-                        <button
-                          key={method}
-                          onClick={() => setForm(f => ({ ...f, payment_method: method }))}
-                          className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
-                            form.payment_method === method
-                              ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <Icon size={20} className={form.payment_method === method ? 'text-gray-900' : 'text-gray-400'} />
-                          <span className="text-sm font-medium">{method}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {form.payment_method === 'Reserva na Loja' ? (
+                    <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 text-sm font-medium">
+                      O pagamento será realizado na loja no momento da retirada.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {CHECKOUT_PAYMENT_METHODS.map(method => {
+                        const Icon = paymentIcons[method] || CreditCard;
+                        return (
+                          <button
+                            key={method}
+                            onClick={() => setForm(f => ({ ...f, payment_method: method }))}
+                            className={`flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
+                              form.payment_method === method
+                                ? 'border-gray-900 bg-gray-50 ring-1 ring-gray-900'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <Icon size={20} className={form.payment_method === method ? 'text-gray-900' : 'text-gray-400'} />
+                            <span className="text-sm font-medium">{method}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
                   {/* Formulário Dinâmico de Pagamento */}
                   <div className="mt-4 p-4 border border-gray-100 rounded-xl bg-gray-50/50">
@@ -413,6 +419,18 @@ const Cart = () => {
                           <div>
                             <strong className="block mb-1 text-base">Pagamento em Dinheiro</strong>
                             <p className="mb-2">O pagamento será realizado no momento da entrega do pedido ou retirada na loja.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {form.payment_method === 'Reserva na Loja' && (
+                      <div className="space-y-4 animate-fadeIn p-5 bg-rose-50 border border-rose-100 rounded-xl text-rose-900 text-sm">
+                        <div className="flex items-start gap-3">
+                          <Store size={24} className="text-rose-500 shrink-0 mt-0.5" />
+                          <div>
+                            <strong className="block mb-1 text-base">Reserva na Loja</strong>
+                            <p className="mb-2">Seus produtos serão reservados. Você poderá experimentar e realizar o pagamento na loja.</p>
                           </div>
                         </div>
                       </div>
@@ -529,7 +547,7 @@ const Cart = () => {
                           Processando...
                         </>
                       ) : (
-                        form.payment_method === 'Dinheiro' ? 'Confirmar Pedido' : 'Confirmar Pagamento'
+                        form.payment_method === 'Dinheiro' || form.payment_method === 'Reserva na Loja' ? 'Confirmar Pedido' : 'Confirmar Pagamento'
                       )}
                     </button>
                   </div>
