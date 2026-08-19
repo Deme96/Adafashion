@@ -11,10 +11,13 @@ const HeroSection = () => {
       {/* Background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-rose-400 via-rose-500 to-pink-400" />
-        {/* Carousel behind the title (50% opacity) */}
+        {/* Carousel behind the title */}
         <div className="absolute inset-0 opacity-50 sm:opacity-100">
           <LogoCarousel />
         </div>
+        
+        {/* Dark overlay for better text contrast */}
+        <div className="absolute inset-0 bg-black/40" />
 
         {/* Decorative elements */}
         <div className="absolute top-1/4 -left-20 w-80 h-80 bg-pink-400/[0.06] rounded-full blur-3xl" />
@@ -48,12 +51,12 @@ const HeroSection = () => {
           </h1>
 
           {/* Subtitle — Casa de Bideras */}
-          <p className="text-sm sm:text-base tracking-[0.3em] uppercase text-pink-300/70 font-medium mb-8">
+          <p className="text-sm sm:text-base tracking-[0.3em] uppercase text-white font-bold drop-shadow-md mb-8">
             Casa de Bideras
           </p>
 
           {/* Description */}
-          <p className="text-lg sm:text-xl text-white/40 max-w-lg mx-auto mb-20 font-light leading-relaxed">
+          <p className="text-lg sm:text-xl text-white/95 drop-shadow-md max-w-lg mx-auto mb-20 font-medium leading-relaxed">
             Moda contemporânea com qualidade premium.
             <br className="hidden sm:block" />
             Estilo que transforma.
