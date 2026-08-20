@@ -668,7 +668,7 @@ const Settings = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">📁 Carregar do Computador</label>
                   <input type="file" accept="video/mp4,video/webm,video/ogg" onChange={handleLocalVideoUpload} 
                     className="text-sm text-gray-600 border border-dashed border-gray-300 rounded-lg p-3 w-full cursor-pointer hover:border-rose-400 hover:bg-rose-50 transition-colors" />
-                  <p className="text-xs text-gray-500 mt-1">Formatos suportados: MP4, WebM (máx. 15MB)</p>
+                  <p className="text-xs text-gray-500 mt-1">Formatos suportados: MP4, WebM, OGG</p>
                 </div>
 
                 {/* Opção 2: URL */}

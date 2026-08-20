@@ -205,11 +205,6 @@ export const videoToBase64 = (file) => {
       return;
     }
     
-    if (file.size > 15 * 1024 * 1024) { // 15MB limit
-      reject(new Error("Video muito grande. O tamanho máximo é 15MB."));
-      return;
-    }
-
     const reader = new FileReader();
     reader.onload = (readerEvent) => {
       resolve(readerEvent.target.result);

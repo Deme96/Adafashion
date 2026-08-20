@@ -38,7 +38,8 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.json({ limit: '100000mb' }));
+app.use(bodyParser.urlencoded({ limit: '100000mb', extended: true, parameterLimit: 10000000 }));
 
 // Migrations and new routes
 (async () => {
