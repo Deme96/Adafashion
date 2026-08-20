@@ -17,7 +17,7 @@ const HeroSection = () => {
         </div>
         
         {/* Dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black/20" />
 
         {/* Decorative elements */}
         <div className="absolute top-1/4 -left-20 w-80 h-80 bg-pink-400/[0.06] rounded-full blur-3xl" />
