@@ -213,3 +213,41 @@ export const videoToBase64 = (file) => {
     reader.readAsDataURL(file);
   });
 };
+
+/**
+ * Convert standard video URL to embed URL
+ */
+export const getEmbedUrl = (url) => {
+  if (!url) return '';
+  
+  // YouTube
+  let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  if (match && match[1]) {
+    return `https://www.youtube.com/embed/${match[1]}`;
+  }
+  
+  // Vimeo
+  match = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/);
+  if (match && match[1]) {
+    return `https://player.vimeo.com/video/${match[1]}`;
+  }
+  
+  // Facebook
+  if (url.includes('facebook.com') && (url.includes('video.php') || url.includes('/videos/'))) {
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}`;
+  }
+  
+  // TikTok
+  match = url.match(/tiktok\.com\/.*\/video\/(\d+)/);
+  if (match && match[1]) {
+    return `https://www.tiktok.com/embed/v2/${match[1]}`;
+  }
+
+  // Dailymotion
+  match = url.match(/dailymotion\.com\/video\/([a-zA-Z0-9]+)/);
+  if (match && match[1]) {
+    return `https://www.dailymotion.com/embed/video/${match[1]}`;
+  }
+
+  return url;
+};

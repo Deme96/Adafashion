@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Play, Newspaper, Tag, Percent } from 'lucide-react';
 import api from '../../lib/api';
-import { formatCurrency, calcDiscount, truncateText, formatDate } from '../../lib/utils';
+import { formatCurrency, calcDiscount, truncateText, formatDate, getEmbedUrl } from '../../lib/utils';
 import StoreNavbar from '../../components/store/StoreNavbar';
 import HeroSection from '../../components/store/HeroSection';
 import ProductCard from '../../components/store/ProductCard';
@@ -151,7 +151,7 @@ const Home = () => {
                 <div key={video.id} className="rounded-2xl overflow-hidden bg-white shadow-sm border border-pink-100">
                   <div className="aspect-video">
                     <iframe
-                      src={video.url}
+                      src={getEmbedUrl(video.url)}
                       title={video.title}
                       className="w-full h-full"
                       allowFullScreen
