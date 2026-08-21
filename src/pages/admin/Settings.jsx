@@ -503,17 +503,20 @@ const Settings = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Nome *</label>
                 <input type="text" value={form.name || ''} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  autoComplete="off" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">E-mail *</label>
                 <input type="email" value={form.email || ''} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  autoComplete="off" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Senha {editing ? '(Deixe em branco para não alterar)' : '*'}</label>
                 <input type="password" value={form.password || ''} onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" />
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  autoComplete="new-password" />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Papel (Privilégios) *</label>
