@@ -129,6 +129,17 @@ const Settings = () => {
         } else {
           await api.createPromotion(data);
         }
+        // Automatically apply discount to all selected products
+        const percent = parseFloat(data.discount_percent);
+        if (percent > 0 && data.selected_products && data.selected_products.length > 0) {
+          for (const prodId of data.selected_products) {
+            const prod = allProducts.find(p => p.id === prodId);
+            if (prod && prod.price) {
+              const newSalePrice = prod.price * (1 - percent / 100);
+              await api.updateProduct(prodId, { sale_price: parseFloat(newSalePrice.toFixed(2)), status_geral: 'Em Promoção' });
+            }
+          }
+        }
       } else if (modalType === 'video') {
         if (editing) {
           await api.updateVideo(editing.id, data);
