@@ -5,8 +5,8 @@ import { Lock, Mail, ArrowRight } from 'lucide-react';
 import { login } from '../../lib/auth';
 
 const Login = () => {
-  const [email, setEmail] = useState('admin@adafashion.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ const Login = () => {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">E-mail</label>
               <div className="relative">
@@ -60,6 +60,8 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-gray-50/50"
                   required
+                  autoComplete="off"
+                  placeholder="Digite seu e-mail"
                 />
               </div>
             </div>
@@ -74,6 +76,8 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-gray-50/50"
                   required
+                  autoComplete="new-password"
+                  placeholder="Digite sua senha"
                 />
               </div>
             </div>

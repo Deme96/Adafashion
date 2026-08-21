@@ -60,7 +60,7 @@ const CustomerLogin = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
               {/* Email */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">E-mail</label>
@@ -72,6 +72,7 @@ const CustomerLogin = () => {
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="seu@email.com"
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 transition-all"
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -87,6 +88,7 @@ const CustomerLogin = () => {
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     placeholder="Sua senha"
                     className="w-full pl-11 pr-12 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 transition-all"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
