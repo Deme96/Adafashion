@@ -28,12 +28,24 @@ const Home = () => {
   const loadHomeData = async () => {
     try {
       const products = await api.getAllProducts();
-      const allProducts = products || [];
-      setAllProducts(allProducts);
-      setFeaturedProducts(allProducts.filter(p => p.is_active));
-      
       const promos = await api.getAllPromotions();
-      setPromotions((promos || []).filter(p => p.is_active));
+      const activePromos = (promos || []).filter(p => p.is_active);
+      setPromotions(activePromos);
+      
+      // Apply promotional prices from active promotions to all products
+      const allProds = (products || []).map(p => {
+        const promo = activePromos.find(pr => 
+          (pr.selected_products || []).includes(p.id) && parseFloat(pr.discount_percent) > 0
+        );
+        if (promo && (!p.sale_price || p.sale_price >= p.price)) {
+          const discountPercent = parseFloat(promo.discount_percent);
+          return { ...p, sale_price: parseFloat((p.price * (1 - discountPercent / 100)).toFixed(2)) };
+        }
+        return p;
+      });
+      
+      setAllProducts(allProds);
+      setFeaturedProducts(allProds.filter(p => p.is_active));
       
       const newsData = await api.getAllNews();
       setNews((newsData || []).filter(n => n.is_published));

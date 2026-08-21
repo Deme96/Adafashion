@@ -28,8 +28,26 @@ const Products = () => {
 
   const loadProducts = async () => {
     try {
-      const allProducts = await api.getAllProducts();
-      setProducts((allProducts || []).filter(p => p.is_active));
+      const [allProducts, allPromotions] = await Promise.all([
+        api.getAllProducts(),
+        api.getAllPromotions(),
+      ]);
+      const activePromos = (allPromotions || []).filter(p => p.is_active);
+      
+      // Apply promotional prices from active promotions
+      const productsWithPromo = (allProducts || []).filter(p => p.is_active).map(p => {
+        // Find if this product is in any active promotion
+        const promo = activePromos.find(pr => 
+          (pr.selected_products || []).includes(p.id) && parseFloat(pr.discount_percent) > 0
+        );
+        if (promo && (!p.sale_price || p.sale_price >= p.price)) {
+          const discountPercent = parseFloat(promo.discount_percent);
+          return { ...p, sale_price: parseFloat((p.price * (1 - discountPercent / 100)).toFixed(2)) };
+        }
+        return p;
+      });
+      
+      setProducts(productsWithPromo);
     } catch (error) {
       console.error('Error loading products:', error);
     }

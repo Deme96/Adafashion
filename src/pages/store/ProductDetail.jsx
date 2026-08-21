@@ -37,8 +37,21 @@ const ProductDetail = () => {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const p = await api.getProduct(id);
+        const [p, allPromotions] = await Promise.all([
+          api.getProduct(id),
+          api.getAllPromotions(),
+        ]);
         if (p) {
+          // Apply promotional price from active promotions
+          const activePromos = (allPromotions || []).filter(pr => pr.is_active);
+          const promo = activePromos.find(pr => 
+            (pr.selected_products || []).includes(p.id) && parseFloat(pr.discount_percent) > 0
+          );
+          if (promo && (!p.sale_price || p.sale_price >= p.price)) {
+            const discountPercent = parseFloat(promo.discount_percent);
+            p.sale_price = parseFloat((p.price * (1 - discountPercent / 100)).toFixed(2));
+          }
+
           if (isGrossista && p.wholesale_price) {
             p.original_price = p.price;
             p.price = p.wholesale_price;
