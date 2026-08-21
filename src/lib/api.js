@@ -114,6 +114,10 @@ export const api = {
     return await apiCall('PUT', `/products/${id}`, data);
   },
 
+  async patchProduct(id, data) {
+    return await apiCall('PATCH', `/products/${id}`, data);
+  },
+
   async deleteProduct(id) {
     return await apiCall('DELETE', `/products/${id}`);
   },

@@ -136,7 +136,7 @@ const Settings = () => {
             const prod = allProducts.find(p => p.id === prodId);
             if (prod && prod.price) {
               const newSalePrice = prod.price * (1 - percent / 100);
-              await api.updateProduct(prodId, { sale_price: parseFloat(newSalePrice.toFixed(2)), status_geral: 'Em Promoção' });
+              await api.patchProduct(prodId, { sale_price: parseFloat(newSalePrice.toFixed(2)), status_geral: 'Em Promoção' });
             }
           }
         }
@@ -184,7 +184,7 @@ const Settings = () => {
           if (prod) {
             const discount = percent / 100;
             const newSalePrice = prod.price * (1 - discount);
-            await api.updateProduct(prodId, { sale_price: newSalePrice, status_geral: 'Em Promoção' });
+            await api.patchProduct(prodId, { sale_price: parseFloat(newSalePrice.toFixed(2)), status_geral: 'Em Promoção' });
           }
         }
         alert("Desconto aplicado com sucesso!");

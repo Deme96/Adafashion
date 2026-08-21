@@ -46,7 +46,17 @@ const Home = () => {
   };
 
   const openPromoModal = (promo) => {
-    const filtered = (allProducts || []).filter(p => (promo.selected_products || []).includes(p.id));
+    const discountPercent = parseFloat(promo.discount_percent) || 0;
+    const filtered = (allProducts || [])
+      .filter(p => (promo.selected_products || []).includes(p.id))
+      .map(p => {
+        // If the product doesn't already have a sale_price, calculate it from the promotion's discount
+        if (discountPercent > 0 && (!p.sale_price || p.sale_price >= p.price)) {
+          const calculatedSalePrice = parseFloat((p.price * (1 - discountPercent / 100)).toFixed(2));
+          return { ...p, sale_price: calculatedSalePrice };
+        }
+        return p;
+      });
     setPromoProducts(filtered);
     setSelectedPromo(promo);
   };

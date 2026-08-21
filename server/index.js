@@ -889,6 +889,56 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
+// Partial update - only updates provided fields
+app.patch('/api/products/:id', async (req, res) => {
+  try {
+    const allowedFields = [
+      'name', 'slug', 'description', 'price', 'sale_price', 'stock', 'category',
+      'image_url', 'status_geral', 'colors', 'sizes', 'images', 'wholesale_price',
+      'wholesale_min_qty', 'unit_price', 'purchase_quantity', 'total_cost', 'supplier',
+      'is_active', 'is_featured',
+    ];
+    const jsonFields = ['colors', 'sizes', 'images'];
+    const boolFields = ['is_active', 'is_featured'];
+
+    const setClauses = [];
+    const values = [];
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        setClauses.push(`${field} = ?`);
+        if (jsonFields.includes(field)) {
+          values.push(toJsonString(req.body[field]));
+        } else if (boolFields.includes(field)) {
+          values.push(req.body[field] ? 1 : 0);
+        } else {
+          values.push(req.body[field]);
+        }
+      }
+    }
+
+    if (setClauses.length === 0) {
+      return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    setClauses.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(req.params.id);
+
+    await pool.query(
+      `UPDATE products SET ${setClauses.join(', ')} WHERE id = ?`,
+      values
+    );
+
+    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
+    const updatedProduct = rows[0];
+    await logActivity('Edição', `O produto '${updatedProduct.name}' foi atualizado (promoção).`, 'Sistema', 'Produtos', updatedProduct.id);
+    res.json(mapProduct(updatedProduct));
+  } catch (error) {
+    console.error('Error patching product', error);
+    res.status(500).json({ message: 'Failed to patch product' });
+  }
+});
+
 app.delete('/api/products/:id', async (req, res) => {
   try {
     await pool.query('DELETE FROM products WHERE id = ?', [req.params.id]);
