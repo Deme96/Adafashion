@@ -1344,16 +1344,11 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const directMatch = userRow && String(userRow.password_hash || '').trim() === String(password || '').trim();
+    const canUseFallback = fallbackAdmin && (!dbAvailable || !userRow);
 
-    if (directMatch || fallbackAdmin) {
-      // Try to update/create user in database if available
-      if (dbAvailable && userRow && fallbackAdmin && String(userRow.password_hash || '').trim() !== ADMIN_PASSWORD) {
-        try {
-          await pool.query('UPDATE users SET password_hash = ? WHERE email = ?', [ADMIN_PASSWORD, email]);
-        } catch (error) {
-          console.error('Failed to update admin password', error.message);
-        }
-      }
+    if (directMatch || canUseFallback) {
+      // Create admin user in database if it doesn't exist yet
+
 
       if (dbAvailable && !userRow) {
         try {
