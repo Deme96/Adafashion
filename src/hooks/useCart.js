@@ -66,19 +66,21 @@ export const useCart = () => {
       let newCart;
       if (existing) {
         const newQuantity = existing.quantity + quantity;
-        const isNowWholesale = existing.is_wholesale && newQuantity >= parseInt(existing.wholesale_min_qty || 1);
+        const wholesaleMinQty = existing.wholesale_min_qty ? parseInt(existing.wholesale_min_qty) : 0;
+        const isNowWholesale = wholesaleMinQty > 0 && newQuantity >= wholesaleMinQty && existing.wholesale_price > 0;
         const normalPrice = existing.sale_price && existing.sale_price < existing.original_price ? existing.sale_price : existing.original_price;
-        const newPrice = isNowWholesale && existing.wholesale_price > 0 ? existing.wholesale_price : normalPrice;
+        const newPrice = isNowWholesale ? existing.wholesale_price : normalPrice;
 
         newCart = prev.map(item =>
           item.key === key
-            ? { ...item, quantity: newQuantity, price: newPrice }
+            ? { ...item, quantity: newQuantity, price: newPrice, is_wholesale_applied: isNowWholesale }
             : item
         );
       } else {
-        const isNowWholesale = product.is_wholesale && quantity >= parseInt(product.wholesale_min_qty || 1);
+        const wholesaleMinQty = product.wholesale_min_qty ? parseInt(product.wholesale_min_qty) : 0;
+        const isNowWholesale = wholesaleMinQty > 0 && quantity >= wholesaleMinQty && product.wholesale_price > 0;
         const normalPrice = product.sale_price && product.sale_price < product.price ? product.sale_price : product.price;
-        const newPrice = isNowWholesale && product.wholesale_price > 0 ? product.wholesale_price : normalPrice;
+        const newPrice = isNowWholesale ? product.wholesale_price : normalPrice;
 
         newCart = [...prev, {
           key,
@@ -93,7 +95,8 @@ export const useCart = () => {
           color: color || '',
           quantity,
           is_wholesale: product.is_wholesale || false,
-          wholesale_min_qty: product.wholesale_min_qty || 1,
+          wholesale_min_qty: product.wholesale_min_qty || 0,
+          is_wholesale_applied: isNowWholesale
         }];
       }
 
@@ -117,10 +120,11 @@ export const useCart = () => {
     setCart(prev => {
       const newCart = prev.map(item => {
         if (item.key === key) {
-          const isNowWholesale = item.is_wholesale && quantity >= parseInt(item.wholesale_min_qty || 1);
+          const wholesaleMinQty = item.wholesale_min_qty ? parseInt(item.wholesale_min_qty) : 0;
+          const isNowWholesale = wholesaleMinQty > 0 && quantity >= wholesaleMinQty && item.wholesale_price > 0;
           const normalPrice = item.sale_price && item.sale_price < item.original_price ? item.sale_price : item.original_price;
-          const newPrice = isNowWholesale && item.wholesale_price > 0 ? item.wholesale_price : normalPrice;
-          return { ...item, quantity, price: newPrice };
+          const newPrice = isNowWholesale ? item.wholesale_price : normalPrice;
+          return { ...item, quantity, price: newPrice, is_wholesale_applied: isNowWholesale };
         }
         return item;
       });

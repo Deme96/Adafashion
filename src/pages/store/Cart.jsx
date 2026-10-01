@@ -489,7 +489,8 @@ const Cart = () => {
                   <h3 className="font-bold text-gray-900 mb-4">Resumo do Pedido</h3>
                   <div className="space-y-3 mb-4">
                     {cart.map(item => {
-                      const minQty = item.is_wholesale && item.wholesale_min_qty ? parseInt(item.wholesale_min_qty) : 1;
+                      const minQty = 1;
+                      const wholesaleMinQty = item.wholesale_min_qty ? parseInt(item.wholesale_min_qty) : 0;
                       return (
                         <div key={item.key} className="space-y-1.5">
                           <div className="flex justify-between text-sm">
@@ -534,11 +535,11 @@ const Cart = () => {
                             </button>
                           </div>
                           {/* Min qty warning for wholesale */}
-                          {item.is_wholesale && minQty > 1 && (
-                            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5">
+                          {wholesaleMinQty > 1 && (
+                            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5 mt-1">
                               <Store size={10} className="text-amber-500 flex-shrink-0" />
                               <span className="text-[10px] text-amber-700 font-medium">
-                                Mín: {minQty} unidades
+                                Compre {wholesaleMinQty} ou mais para preço grossista
                               </span>
                             </div>
                           )}

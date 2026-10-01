@@ -23,6 +23,7 @@ const emptyProduct = {
   purchase_quantity: '',
   total_cost: '',
   supplier: '',
+  purchase_payment_proof: '',
   images: []
 };
 
@@ -92,6 +93,7 @@ const Purchases = () => {
       purchase_quantity: p.purchase_quantity || '',
       total_cost: p.total_cost || '',
       supplier: p.supplier || '',
+      purchase_payment_proof: p.purchase_payment_proof || '',
       images: p.images || (p.image ? [p.image] : [])
     });
     setIsModalOpen(true);
@@ -160,6 +162,7 @@ const Purchases = () => {
       unit_price: unitPrice,
       purchase_quantity: purchaseQty,
       total_cost: unitPrice * purchaseQty,
+      purchase_payment_proof: form.purchase_payment_proof || null,
       colors,
       sizes,
       images: form.images || [],
@@ -304,9 +307,14 @@ const Purchases = () => {
                     <td className="py-3 px-4 font-semibold">{formatCurrency(p.sale_price || p.price)}</td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {p.purchase_payment_proof && (
+                          <a href={p.purchase_payment_proof} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-green-50 text-gray-400 hover:text-green-600 transition-colors" title="Ver Comprovativo de Pagamento">
+                            <DollarSign size={15} />
+                          </a>
+                        )}
                         <button onClick={() => handleCheckStock(p)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title="Verificar Estoque"><Eye size={15} /></button>
-                        <button onClick={() => openEdit(p)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors"><Pencil size={15} /></button>
-                        <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"><Trash2 size={15} /></button>
+                        <button onClick={() => openEdit(p)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors" title="Editar"><Pencil size={15} /></button>
+                        <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Eliminar"><Trash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -339,6 +347,34 @@ const Purchases = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-1">Preço Total</label>
                 <input type="number" step="0.01" readOnly value={form.total_cost} className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 font-semibold cursor-not-allowed" />
               </div>
+            </div>
+            
+            <div className="mt-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Comprovativo de Pagamento
+              </label>
+              <input
+                type="text"
+                value={form.purchase_payment_proof || ''}
+                onChange={(e) => setForm(f => ({ ...f, purchase_payment_proof: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-rose-400 bg-white mb-2"
+                placeholder="Cole o link do comprovativo aqui..."
+              />
+              <input 
+                type="file" 
+                accept=".pdf,image/*" 
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setForm(f => ({ ...f, purchase_payment_proof: reader.result }));
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
+              />
             </div>
           </div>
 
