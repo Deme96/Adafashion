@@ -394,6 +394,18 @@ const Reservations = () => {
                 </div>
               </div>
               
+              {selectedOrder.payment_proof && (
+                <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-blue-600 font-bold uppercase">Comprovativo de Pagamento</p>
+                    <p className="text-xs text-blue-500">Documento anexado à reserva</p>
+                  </div>
+                  <a href={selectedOrder.payment_proof} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors">
+                    Ver Anexo
+                  </a>
+                </div>
+              )}
+              
               {selectedOrder.status !== 'Entregue' && selectedOrder.status !== 'Cancelado' && (
                 <button
                   onClick={() => { handleDeliver(selectedOrder.id); setSelectedOrder(null); }}

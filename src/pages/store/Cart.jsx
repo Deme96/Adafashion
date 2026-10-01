@@ -37,6 +37,7 @@ const Cart = () => {
     card_number: '',
     card_expiry: '',
     card_cvv: '',
+    payment_proof: '',
   });
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -110,6 +111,7 @@ const Cart = () => {
       total,
       status: 'Pendente',
       transaction_id: paymentResult?.transactionId,
+      payment_proof: form.payment_proof || null,
     });
 
     clearCart();
@@ -398,6 +400,35 @@ const Cart = () => {
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                           placeholder="Digite o número de telefone"
                         />
+                        {form.payment_method === 'Orange Money' && (
+                          <div className="mt-4 animate-fadeIn">
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              Comprovativo de Pagamento (Link ou Arquivo)
+                            </label>
+                            <input
+                              type="text"
+                              value={form.payment_proof || ''}
+                              onChange={(e) => setForm(f => ({ ...f, payment_proof: e.target.value }))}
+                              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 mb-2"
+                              placeholder="Cole o link do comprovativo aqui..."
+                            />
+                            <input 
+                              type="file" 
+                              accept=".pdf,image/*" 
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setForm(f => ({ ...f, payment_proof: reader.result }));
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                              className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                      {form.payment_method === 'Transferência bancária' && (

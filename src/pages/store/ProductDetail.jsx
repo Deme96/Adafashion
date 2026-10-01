@@ -53,13 +53,8 @@ const ProductDetail = () => {
           }
 
           if (isGrossista && p.wholesale_price) {
-            p.original_price = p.price;
-            p.price = p.wholesale_price;
-            p.sale_price = null;
             const minQ = p.wholesale_min_qty ? parseInt(p.wholesale_min_qty) : 1;
-            setMinQuantity(minQ);
             setQuantity(minQ);
-            setIsWholesaleMode(true);
           }
           setProduct(p);
           if (p.sizes?.length) setSelectedSize(p.sizes[0]);
@@ -89,10 +84,13 @@ const ProductDetail = () => {
     );
   }
 
-  const discount = calcDiscount(product.price, product.sale_price);
+  const minQuantityCalc = product?.is_wholesale && product?.wholesale_min_qty ? parseInt(product.wholesale_min_qty) : 1;
+  const isCurrentWholesale = product?.is_wholesale && quantity >= minQuantityCalc && product?.wholesale_price > 0;
+  const normalPrice = product?.sale_price && product.sale_price < product.price ? product.sale_price : product?.price;
+  const displayPrice = isCurrentWholesale ? product.wholesale_price : normalPrice;
+
+  const discount = calcDiscount(product.price, displayPrice);
   const isOutOfStock = product.stock <= 0;
-  const displayPrice = product.sale_price && product.sale_price < product.price
-    ? product.sale_price : product.price;
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
@@ -208,7 +206,7 @@ const ProductDetail = () => {
                   <span className={`text-3xl font-bold ${discount > 0 ? 'text-red-600' : 'text-gray-900'}`}>
                     {formatCurrency(displayPrice * quantity)}
                   </span>
-                  {discount > 0 && !isWholesaleMode && (
+                  {discount > 0 && !isCurrentWholesale && (
                     <>
                       <span className="text-lg text-gray-400 line-through">{formatCurrency(product.price * quantity)}</span>
                       <span className="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full">
@@ -217,9 +215,9 @@ const ProductDetail = () => {
                     </>
                   )}
                 </div>
-                {isWholesaleMode && (
+                {isCurrentWholesale && (
                   <span className="text-xs font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded-md w-fit">
-                    Preço Exclusivo Grossista
+                    Preço de Grossista Aplicado
                   </span>
                 )}
               </div>
@@ -312,9 +310,9 @@ const ProductDetail = () => {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden w-fit">
                     <button
-                      onClick={() => setQuantity(q => Math.max(minQuantity, q - 1))}
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
                       className="p-3 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                      disabled={isOutOfStock || quantity <= minQuantity}
+                      disabled={isOutOfStock || quantity <= 1}
                     >
                       <Minus size={16} />
                     </button>
@@ -327,8 +325,8 @@ const ProductDetail = () => {
                       <Plus size={16} />
                     </button>
                   </div>
-                  {isWholesaleMode && minQuantity > 1 && (
-                    <span className="text-xs text-rose-500 font-medium">Pedido mínimo: {minQuantity} unidades</span>
+                  {product?.is_wholesale && minQuantityCalc > 1 && (
+                    <span className="text-xs text-rose-500 font-medium">Compre {minQuantityCalc} ou mais para preço de grossista</span>
                   )}
                 </div>
 

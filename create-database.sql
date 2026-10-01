@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS orders (
   status ENUM('pending', 'confirmed', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
   payment_method VARCHAR(50) DEFAULT NULL,
   payment_status ENUM('pending', 'paid', 'refunded', 'failed') NOT NULL DEFAULT 'pending',
+  payment_proof LONGTEXT DEFAULT NULL,
   subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   discount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   total DECIMAL(10,2) NOT NULL DEFAULT 0.00,

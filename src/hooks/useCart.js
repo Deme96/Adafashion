@@ -65,20 +65,29 @@ export const useCart = () => {
 
       let newCart;
       if (existing) {
+        const newQuantity = existing.quantity + quantity;
+        const isNowWholesale = existing.is_wholesale && newQuantity >= parseInt(existing.wholesale_min_qty || 1);
+        const normalPrice = existing.sale_price && existing.sale_price < existing.original_price ? existing.sale_price : existing.original_price;
+        const newPrice = isNowWholesale && existing.wholesale_price > 0 ? existing.wholesale_price : normalPrice;
+
         newCart = prev.map(item =>
           item.key === key
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity, price: newPrice }
             : item
         );
       } else {
+        const isNowWholesale = product.is_wholesale && quantity >= parseInt(product.wholesale_min_qty || 1);
+        const normalPrice = product.sale_price && product.sale_price < product.price ? product.sale_price : product.price;
+        const newPrice = isNowWholesale && product.wholesale_price > 0 ? product.wholesale_price : normalPrice;
+
         newCart = [...prev, {
           key,
           product_id: product.id,
           product_name: product.name,
-          price: product.sale_price && product.sale_price < product.price
-            ? product.sale_price
-            : product.price,
+          price: newPrice,
           original_price: product.price,
+          sale_price: product.sale_price,
+          wholesale_price: product.wholesale_price,
           image: product.images?.[0] || '',
           size: size || '',
           color: color || '',
@@ -106,9 +115,15 @@ export const useCart = () => {
       return removeItem(key);
     }
     setCart(prev => {
-      const newCart = prev.map(item =>
-        item.key === key ? { ...item, quantity } : item
-      );
+      const newCart = prev.map(item => {
+        if (item.key === key) {
+          const isNowWholesale = item.is_wholesale && quantity >= parseInt(item.wholesale_min_qty || 1);
+          const normalPrice = item.sale_price && item.sale_price < item.original_price ? item.sale_price : item.original_price;
+          const newPrice = isNowWholesale && item.wholesale_price > 0 ? item.wholesale_price : normalPrice;
+          return { ...item, quantity, price: newPrice };
+        }
+        return item;
+      });
       saveCartToStorage(newCart);
       return newCart;
     });
