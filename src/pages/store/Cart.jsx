@@ -440,6 +440,33 @@ const Cart = () => {
                             <p className="mb-2">Ao confirmar o pedido, enviaremos os dados da nossa conta bancária para você realizar a transferência.</p>
                           </div>
                         </div>
+                        <div className="mt-3 pt-3 border-t border-blue-200/60 animate-fadeIn">
+                          <label className="block text-sm font-semibold text-blue-950 mb-1.5">
+                            Comprovativo de Pagamento (Link ou Arquivo)
+                          </label>
+                          <input
+                            type="text"
+                            value={form.payment_proof || ''}
+                            onChange={(e) => setForm(f => ({ ...f, payment_proof: e.target.value }))}
+                            className="w-full px-4 py-3 rounded-xl border border-blue-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2 text-gray-900"
+                            placeholder="Cole o link do comprovativo aqui..."
+                          />
+                          <input 
+                            type="file" 
+                            accept=".pdf,image/*" 
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  setForm(f => ({ ...f, payment_proof: reader.result }));
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-800 hover:file:bg-blue-200 cursor-pointer"
+                          />
+                        </div>
                       </div>
                     )}
 
