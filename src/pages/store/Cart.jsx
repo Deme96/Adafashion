@@ -535,13 +535,22 @@ const Cart = () => {
                             </button>
                           </div>
                           {/* Min qty warning for wholesale */}
-                          {wholesaleMinQty > 1 && (
-                            <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5 mt-1">
-                              <Store size={10} className="text-amber-500 flex-shrink-0" />
-                              <span className="text-[10px] text-amber-700 font-medium">
-                                Compre {wholesaleMinQty} ou mais para preço grossista
-                              </span>
-                            </div>
+                          {wholesaleMinQty > 1 && item.wholesale_price > 0 && (
+                            item.is_wholesale_applied ? (
+                              <div className="flex items-center gap-1 bg-green-50 border border-green-200 rounded-md px-2 py-0.5 mt-1 w-fit">
+                                <Check size={10} className="text-green-500 flex-shrink-0" />
+                                <span className="text-[10px] text-green-700 font-medium">
+                                  Preço grossista aplicado
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5 mt-1 w-fit">
+                                <Store size={10} className="text-amber-500 flex-shrink-0" />
+                                <span className="text-[10px] text-amber-700 font-medium">
+                                  Compre {wholesaleMinQty} ou mais para preço grossista
+                                </span>
+                              </div>
+                            )
                           )}
                         </div>
                       );

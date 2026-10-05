@@ -457,15 +457,24 @@ const Sales = () => {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 uppercase">Pagamento</p>
-                <p className="font-semibold text-gray-900">{selectedOrder.payment_method}</p>
+            <div className="pt-4 border-t border-gray-100 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase">Pagamento</p>
+                  <p className="font-semibold text-gray-900">{selectedOrder.payment_method}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-gray-500 uppercase">Total</p>
+                  <span className="text-xl font-bold text-rose-500">{formatCurrency(selectedOrder.total)}</span>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase">Total</p>
-                <span className="text-xl font-bold text-rose-500">{formatCurrency(selectedOrder.total)}</span>
-              </div>
+              {selectedOrder.payment_proof && (
+                <div className="flex justify-start">
+                  <a href={selectedOrder.payment_proof} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    Ver Comprovativo
+                  </a>
+                </div>
+              )}
             </div>
 
             {selectedOrder.status !== 'Cancelado' && (

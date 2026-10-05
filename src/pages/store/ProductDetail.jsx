@@ -84,8 +84,8 @@ const ProductDetail = () => {
     );
   }
 
-  const minQuantityCalc = product?.is_wholesale && product?.wholesale_min_qty ? parseInt(product.wholesale_min_qty) : 1;
-  const isCurrentWholesale = product?.is_wholesale && quantity >= minQuantityCalc && product?.wholesale_price > 0;
+  const wholesaleMinQty = product?.wholesale_min_qty ? parseInt(product.wholesale_min_qty) : 0;
+  const isCurrentWholesale = wholesaleMinQty > 0 && quantity >= wholesaleMinQty && product?.wholesale_price > 0;
   const normalPrice = product?.sale_price && product.sale_price < product.price ? product.sale_price : product?.price;
   const displayPrice = isCurrentWholesale ? product.wholesale_price : normalPrice;
 
@@ -325,8 +325,8 @@ const ProductDetail = () => {
                       <Plus size={16} />
                     </button>
                   </div>
-                  {product?.is_wholesale && minQuantityCalc > 1 && (
-                    <span className="text-xs text-rose-500 font-medium">Compre {minQuantityCalc} ou mais para preço de grossista</span>
+                  {wholesaleMinQty > 1 && product?.wholesale_price > 0 && !isCurrentWholesale && (
+                    <span className="text-xs text-rose-500 font-medium">Compre {wholesaleMinQty} ou mais para preço de grossista</span>
                   )}
                 </div>
 
