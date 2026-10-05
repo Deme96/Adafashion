@@ -505,6 +505,7 @@ const ensureSchema = async () => {
   await ensureColumn('products', 'total_cost', 'total_cost NUMERIC(10,2) NOT NULL DEFAULT 0.00');
   await ensureColumn('products', 'supplier', 'supplier VARCHAR(150) DEFAULT NULL');
   await ensureColumn('products', 'is_featured', 'is_featured BOOLEAN NOT NULL DEFAULT FALSE');
+  await ensureColumn('products', 'purchase_payment_proof', 'purchase_payment_proof TEXT DEFAULT NULL');
 
   await pool.query(`ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(50)`);
   await pool.query(`ALTER TABLE users ALTER COLUMN role SET DEFAULT 'Admin'`);
@@ -522,6 +523,7 @@ const ensureSchema = async () => {
   await ensureColumn('orders', 'customer_address', 'customer_address TEXT DEFAULT NULL');
   await ensureColumn('orders', 'transaction_id', 'transaction_id VARCHAR(100) DEFAULT NULL');
   await ensureColumn('orders', 'items', 'items TEXT DEFAULT NULL');
+  await ensureColumn('orders', 'payment_proof', 'payment_proof TEXT DEFAULT NULL');
   await ensureColumn('customers', 'account_type', "account_type VARCHAR(30) NOT NULL DEFAULT 'normal'");
 };
 
@@ -643,12 +645,13 @@ app.post('/api/orders', async (req, res) => {
       total,
       notes,
       items,
+      payment_proof,
     } = req.body;
 
     const generatedOrderNumber = order_number || `ORDER-${Date.now()}`;
 
     const [result] = await pool.query(
-      'INSERT INTO orders (customer_id, customer_name, customer_email, customer_phone, customer_address, transaction_id, order_number, status, payment_method, payment_status, subtotal, discount, total, notes, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO orders (customer_id, customer_name, customer_email, customer_phone, customer_address, transaction_id, order_number, status, payment_method, payment_status, subtotal, discount, total, notes, items, payment_proof) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         customer_id || null,
         customer_name || null,
@@ -665,6 +668,7 @@ app.post('/api/orders', async (req, res) => {
         total || 0,
         notes || null,
         toJsonString(items) || null,
+        payment_proof || null,
       ]
     );
 
@@ -677,7 +681,7 @@ app.post('/api/orders', async (req, res) => {
 
 app.put('/api/orders/:id', async (req, res) => {
   try {
-    const { status, payment_status, total, notes, items, customer_name, customer_email, customer_phone, payment_method } = req.body;
+    const { status, payment_status, total, notes, items, customer_name, customer_email, customer_phone, payment_method, payment_proof } = req.body;
 
     // Build dynamic update query - only update fields that were sent
     const updates = [];
@@ -691,6 +695,7 @@ app.put('/api/orders/:id', async (req, res) => {
     if (customer_email !== undefined) { updates.push('customer_email = ?'); values.push(customer_email); }
     if (customer_phone !== undefined) { updates.push('customer_phone = ?'); values.push(customer_phone); }
     if (payment_method !== undefined) { updates.push('payment_method = ?'); values.push(payment_method); }
+    if (payment_proof !== undefined) { updates.push('payment_proof = ?'); values.push(payment_proof); }
     updates.push('updated_at = CURRENT_TIMESTAMP');
 
     if (updates.length > 1) {
@@ -787,11 +792,12 @@ app.post('/api/products', async (req, res) => {
       supplier,
       is_active,
       is_featured,
+      purchase_payment_proof,
     } = req.body;
 
     const productSlug = slug || generateSlug(name);
     const [result] = await pool.query(
-      'INSERT INTO products (name, slug, description, price, sale_price, stock, category, image_url, status_geral, colors, sizes, images, wholesale_price, wholesale_min_qty, unit_price, purchase_quantity, total_cost, supplier, is_active, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO products (name, slug, description, price, sale_price, stock, category, image_url, status_geral, colors, sizes, images, wholesale_price, wholesale_min_qty, unit_price, purchase_quantity, total_cost, supplier, is_active, is_featured, purchase_payment_proof) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         name,
         productSlug,
@@ -813,6 +819,7 @@ app.post('/api/products', async (req, res) => {
         supplier || null,
         is_active ? 1 : 0,
         is_featured ? 1 : 0,
+        purchase_payment_proof || null,
       ]
     );
 
@@ -849,11 +856,12 @@ app.put('/api/products/:id', async (req, res) => {
       supplier,
       is_active,
       is_featured,
+      purchase_payment_proof,
     } = req.body;
 
     const productSlug = slug || generateSlug(name);
     await pool.query(
-      'UPDATE products SET name = ?, slug = ?, description = ?, price = ?, sale_price = ?, stock = ?, category = ?, image_url = ?, status_geral = ?, colors = ?, sizes = ?, images = ?, wholesale_price = ?, wholesale_min_qty = ?, unit_price = ?, purchase_quantity = ?, total_cost = ?, supplier = ?, is_active = ?, is_featured = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE products SET name = ?, slug = ?, description = ?, price = ?, sale_price = ?, stock = ?, category = ?, image_url = ?, status_geral = ?, colors = ?, sizes = ?, images = ?, wholesale_price = ?, wholesale_min_qty = ?, unit_price = ?, purchase_quantity = ?, total_cost = ?, supplier = ?, is_active = ?, is_featured = ?, purchase_payment_proof = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [
         name,
         productSlug,
@@ -875,6 +883,7 @@ app.put('/api/products/:id', async (req, res) => {
         supplier || null,
         is_active ? 1 : 0,
         is_featured ? 1 : 0,
+        purchase_payment_proof || null,
         req.params.id,
       ]
     );
@@ -896,7 +905,7 @@ app.patch('/api/products/:id', async (req, res) => {
       'name', 'slug', 'description', 'price', 'sale_price', 'stock', 'category',
       'image_url', 'status_geral', 'colors', 'sizes', 'images', 'wholesale_price',
       'wholesale_min_qty', 'unit_price', 'purchase_quantity', 'total_cost', 'supplier',
-      'is_active', 'is_featured',
+      'is_active', 'is_featured', 'purchase_payment_proof'
     ];
     const jsonFields = ['colors', 'sizes', 'images'];
     const boolFields = ['is_active', 'is_featured'];
