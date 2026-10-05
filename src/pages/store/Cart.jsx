@@ -400,7 +400,7 @@ const Cart = () => {
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
                           placeholder="Digite o número de telefone"
                         />
-                        {form.payment_method === 'Orange Money' && (
+                        {(form.payment_method === 'Orange Money' || form.payment_method === 'Teletacu') && (
                           <div className="mt-4 animate-fadeIn">
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                               Comprovativo de Pagamento (Link ou Arquivo)
