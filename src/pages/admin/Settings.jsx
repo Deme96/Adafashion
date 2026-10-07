@@ -108,7 +108,6 @@ const Settings = () => {
   };
 
   const toggleMenuPermissions = (menuObj) => {
-    if (form.role === 'Admin') return;
     const current = form.permissions || [];
     const menuFeatureKeys = [menuObj.key, ...menuObj.features.map(f => f.key)];
     const allChecked = menuFeatureKeys.every(k => current.includes(k));
@@ -122,13 +121,11 @@ const Settings = () => {
 
     setForm(f => ({
       ...f,
-      role: 'Personalizado',
       permissions: updated,
     }));
   };
 
   const toggleSubFeaturePermission = (menuObj, featureKey) => {
-    if (form.role === 'Admin') return;
     const current = form.permissions || [];
     let updated;
     if (current.includes(featureKey)) {
@@ -143,7 +140,6 @@ const Settings = () => {
 
     setForm(f => ({
       ...f,
-      role: 'Personalizado',
       permissions: updated,
     }));
   };
@@ -655,24 +651,22 @@ const Settings = () => {
                     </label>
                     <p className="text-xs text-gray-500">Marque quais módulos o usuário poderá ver e usar:</p>
                   </div>
-                  {form.role !== 'Admin' && (
-                    <div className="flex gap-2">
-                      <button type="button" onClick={() => setForm(f => ({ ...f, role: 'Personalizado', permissions: MENU_RESOURCES.map(m => m.key) }))}
-                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 px-2 py-1 rounded-md">
-                        Marcar Todos
-                      </button>
-                      <button type="button" onClick={() => setForm(f => ({ ...f, role: 'Personalizado', permissions: [] }))}
-                        className="text-xs font-semibold text-gray-500 hover:text-gray-700 bg-gray-100 px-2 py-1 rounded-md">
-                        Desmarcar Todos
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setForm(f => ({ ...f, permissions: MENU_RESOURCES.flatMap(m => [m.key, ...m.features.map(feat => feat.key)]) }))}
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 px-2 py-1 rounded-md">
+                      Marcar Todos
+                    </button>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, permissions: [] }))}
+                      className="text-xs font-semibold text-gray-500 hover:text-gray-700 bg-gray-100 px-2 py-1 rounded-md">
+                      Desmarcar Todos
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-1">
                   {MENU_RESOURCES.map((item) => {
-                    const isMenuChecked = form.role === 'Admin' || (form.permissions || []).includes(item.key) || item.features.some(f => (form.permissions || []).includes(f.key));
-                    const isDisabled = form.role === 'Admin';
+                    const isMenuChecked = (form.permissions || []).includes(item.key) || item.features.some(f => (form.permissions || []).includes(f.key));
+                    const isDisabled = false;
                     return (
                       <div key={item.key} className="p-3 rounded-xl border bg-gray-50/30 border-gray-200 flex flex-col gap-3">
                         <div
@@ -699,7 +693,7 @@ const Settings = () => {
                         {item.features && item.features.length > 0 && (
                           <div className="ml-7 grid grid-cols-1 sm:grid-cols-2 gap-2 border-l-2 border-gray-200 pl-3">
                             {item.features.map(feature => {
-                              const isFeatureChecked = form.role === 'Admin' || (form.permissions || []).includes(feature.key);
+                              const isFeatureChecked = (form.permissions || []).includes(feature.key);
                               return (
                                 <div
                                   key={feature.key}
@@ -728,11 +722,6 @@ const Settings = () => {
                     );
                   })}
                 </div>
-                {form.role === 'Admin' && (
-                  <p className="text-xs text-purple-700 bg-purple-50 p-2.5 rounded-lg border border-purple-100 flex items-center gap-1.5">
-                    <Shield size={14} /> Administradores possuem acesso total a todos os menus do sistema.
-                  </p>
-                )}
               </div>
             </>
           )}

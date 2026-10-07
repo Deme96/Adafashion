@@ -170,11 +170,7 @@ const getRolePermissions = (roleOrUser) => {
   }
 
   const normalizedRole = normalizeRole(role);
-  if (normalizedRole === 'Admin') {
-    return ALL_KEYS;
-  }
-
-  if (user && Array.isArray(user.permissions) && user.permissions.length > 0) {
+  if (user && Array.isArray(user.permissions)) {
     return user.permissions;
   }
 
@@ -256,7 +252,6 @@ export const canAccessMenu = (menuKey, userOrRole = null) => {
   if (!user) {
     if (typeof userOrRole === 'string') {
       const normalizedRole = normalizeRole(userOrRole);
-      if (normalizedRole === 'Admin') return true;
       const rolePerms = ROLE_PERMISSIONS[normalizedRole] || [];
       return rolePerms.includes(menuKey) || rolePerms.some(p => p.startsWith(`${menuKey}.`));
     }
@@ -264,9 +259,8 @@ export const canAccessMenu = (menuKey, userOrRole = null) => {
   }
 
   const userRole = normalizeRole(user.role);
-  if (userRole === 'Admin') return true;
 
-  const userPerms = (Array.isArray(user.permissions) && user.permissions.length > 0)
+  const userPerms = Array.isArray(user.permissions)
     ? user.permissions
     : (ROLE_PERMISSIONS[userRole] || []);
 
@@ -285,7 +279,6 @@ export const hasPermission = (permissionKey, userOrRole = null) => {
   if (!user) {
     if (typeof userOrRole === 'string') {
       const normalizedRole = normalizeRole(userOrRole);
-      if (normalizedRole === 'Admin') return true;
       const rolePerms = ROLE_PERMISSIONS[normalizedRole] || [];
       const parentKey = permissionKey.split('.')[0];
       return rolePerms.includes(permissionKey) || rolePerms.includes(parentKey);
@@ -294,9 +287,8 @@ export const hasPermission = (permissionKey, userOrRole = null) => {
   }
 
   const userRole = normalizeRole(user.role);
-  if (userRole === 'Admin') return true;
 
-  const userPerms = (Array.isArray(user.permissions) && user.permissions.length > 0)
+  const userPerms = Array.isArray(user.permissions)
     ? user.permissions
     : (ROLE_PERMISSIONS[userRole] || []);
 
@@ -309,7 +301,6 @@ export const hasAccess = (allowedRolesOrMenuKey = []) => {
   if (!user) return false;
 
   const userRole = normalizeRole(user.role);
-  if (userRole === 'Admin') return true;
 
   if (typeof allowedRolesOrMenuKey === 'string') {
     return canAccessMenu(allowedRolesOrMenuKey, user);
@@ -317,7 +308,6 @@ export const hasAccess = (allowedRolesOrMenuKey = []) => {
 
   if (Array.isArray(allowedRolesOrMenuKey)) {
     return allowedRolesOrMenuKey.some((item) => {
-      if (normalizeRole(item) === userRole) return true;
       return canAccessMenu(item, user);
     });
   }
