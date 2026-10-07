@@ -29,7 +29,20 @@ import GlobalToast from './components/ui/Toast';
 const ProtectedRoute = ({ element, allowedRoles, menuKey }) => {
   if (!isAuthenticated()) return <Navigate to="/admin/login" replace />;
   const allowed = menuKey ? canAccessMenu(menuKey) : hasAccess(allowedRoles);
-  if (!allowed) return <Navigate to="/admin" replace />;
+  if (!allowed) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-gray-800">
+        <h2 className="text-2xl font-bold mb-4">Acesso Negado</h2>
+        <p className="mb-6">Você não possui permissão para acessar esta área.</p>
+        <button 
+          onClick={() => { localStorage.clear(); window.location.href = '/admin/login'; }} 
+          className="px-4 py-2 bg-rose-500 text-white rounded hover:bg-rose-600"
+        >
+          Fazer Login Novamente
+        </button>
+      </div>
+    );
+  }
   return element;
 };
 

@@ -282,7 +282,7 @@ const parseJson = (value) => {
 };
 
 const safeParseArray = (value) => {
-  if (!value) return [];
+  if (!value) return null;
   if (Array.isArray(value)) return value;
   try {
     return JSON.parse(value);
