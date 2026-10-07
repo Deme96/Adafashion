@@ -6,7 +6,7 @@ import { formatDate, formatCurrency } from '../../lib/utils';
 import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { fileToBase64, videoToBase64 } from '../../lib/utils';
-import { MENU_RESOURCES, ROLE_PERMISSIONS, getRolePermissions, canAccessMenu, hasPermission } from '../../lib/auth';
+import { MENU_RESOURCES, ROLE_PERMISSIONS, getRolePermissions, canAccessMenu, hasPermission, getLoggedUser } from '../../lib/auth';
 
 const tabs = ['Geral', 'Usuários', 'Promoções', 'Vídeos', 'Notícias', 'Fotos Carousel', 'Logs'];
 
@@ -190,7 +190,17 @@ const Settings = () => {
     try {
       if (modalType === 'user') {
         if (editing) {
-          await api.updateUser(editing.id, data);
+          const updatedUser = await api.updateUser(editing.id, data);
+          const currentUser = getLoggedUser();
+          if (currentUser && currentUser.id === editing.id && updatedUser) {
+            const newToken = JSON.stringify({
+              ...currentUser,
+              role: updatedUser.role,
+              permissions: updatedUser.permissions
+            });
+            localStorage.setItem('adafashion_admin_token', newToken);
+            window.location.reload();
+          }
         } else {
           await api.createUser(data);
         }
