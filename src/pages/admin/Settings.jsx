@@ -162,7 +162,7 @@ const Settings = () => {
     setModalType(type);
     setEditing(item);
     if (type === 'user') {
-      const userPerms = Array.isArray(item.permissions) && item.permissions.length > 0
+      const userPerms = Array.isArray(item.permissions)
         ? item.permissions
         : getRolePermissions(item);
       setForm({

@@ -280,8 +280,7 @@ export const hasPermission = (permissionKey, userOrRole = null) => {
     if (typeof userOrRole === 'string') {
       const normalizedRole = normalizeRole(userOrRole);
       const rolePerms = ROLE_PERMISSIONS[normalizedRole] || [];
-      const parentKey = permissionKey.split('.')[0];
-      return rolePerms.includes(permissionKey) || rolePerms.includes(parentKey);
+      return rolePerms.includes(permissionKey);
     }
     return false;
   }
@@ -292,8 +291,7 @@ export const hasPermission = (permissionKey, userOrRole = null) => {
     ? user.permissions
     : (ROLE_PERMISSIONS[userRole] || []);
 
-  const parentKey = permissionKey.split('.')[0];
-  return userPerms.includes(permissionKey) || userPerms.includes(parentKey);
+  return userPerms.includes(permissionKey);
 };
 
 export const hasAccess = (allowedRolesOrMenuKey = []) => {
