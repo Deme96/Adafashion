@@ -315,6 +315,7 @@ const normalizeUserRole = (role) => {
   if (['gerente', 'manager'].includes(value)) return 'Gerente';
   if (['vendedor', 'seller', 'sales', 'staff', 'funcionario', 'employee'].includes(value)) return 'Vendedor';
   if (['visualizador', 'viewer', 'read-only'].includes(value)) return 'Visualizador';
+  if (['personalizado', 'custom'].includes(value)) return 'Personalizado';
   return 'Admin';
 };
 
@@ -525,6 +526,7 @@ const ensureSchema = async () => {
   await ensureColumn('orders', 'items', 'items TEXT DEFAULT NULL');
   await ensureColumn('orders', 'payment_proof', 'payment_proof TEXT DEFAULT NULL');
   await ensureColumn('customers', 'account_type', "account_type VARCHAR(30) NOT NULL DEFAULT 'normal'");
+  await ensureColumn('users', 'permissions', 'permissions TEXT DEFAULT NULL');
 };
 
 const mapProduct = (row) => ({
@@ -570,6 +572,7 @@ const mapOrder = (row) => ({
 const mapUser = (row) => ({
   ...row,
   role: normalizeUserRole(row?.role),
+  permissions: safeParseArray(row?.permissions),
 });
 
 const mapActivityLog = (row) => ({ ...row });
@@ -1202,7 +1205,7 @@ app.post('/api/store-settings', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users ORDER BY created_at DESC');
+    const [rows] = await pool.query('SELECT id, full_name AS name, email, role, permissions, status, created_at, updated_at FROM users ORDER BY created_at DESC');
     res.json(rows.map(mapUser));
   } catch (error) {
     console.error('Error fetching users', error);
@@ -1212,7 +1215,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, permissions } = req.body;
     const normalizedEmail = normalizeEmail(email);
 
     // Cross-check: Ensure email doesn't exist in users or customers
@@ -1226,15 +1229,16 @@ app.post('/api/users', async (req, res) => {
     }
 
     const normalizedRole = normalizeUserRole(role || 'Vendedor');
-    const [result] = await pool.query('INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)', [name, normalizedEmail, password, normalizedRole, 'active']);
+    const permString = permissions ? JSON.stringify(permissions) : null;
+    const [result] = await pool.query('INSERT INTO users (full_name, email, password_hash, role, permissions, status) VALUES (?, ?, ?, ?, ?, ?)', [name, normalizedEmail, password, normalizedRole, permString, 'active']);
 
     // Fetch newly created user by ID or Email as fallback
     const insertId = result.insertId || (result.rows && result.rows[0] ? result.rows[0].id : null);
     let rows = [];
     if (insertId) {
-      [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE id = ?', [insertId]);
+      [rows] = await pool.query('SELECT id, full_name AS name, email, role, permissions, status, created_at, updated_at FROM users WHERE id = ?', [insertId]);
     } else {
-      [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE email = ? ORDER BY created_at DESC LIMIT 1', [email]);
+      [rows] = await pool.query('SELECT id, full_name AS name, email, role, permissions, status, created_at, updated_at FROM users WHERE email = ? ORDER BY created_at DESC LIMIT 1', [email]);
     }
 
     const newUser = rows[0];
@@ -1252,7 +1256,7 @@ app.post('/api/users', async (req, res) => {
 
 app.put('/api/users/:id', async (req, res) => {
   try {
-    const { name, email, password, role, status } = req.body;
+    const { name, email, password, role, status, permissions } = req.body;
     const updates = [];
     const values = [];
     if (name) { updates.push('full_name = ?'); values.push(name); }
@@ -1272,11 +1276,12 @@ app.put('/api/users/:id', async (req, res) => {
     }
     if (password) { updates.push('password_hash = ?'); values.push(password); }
     if (role !== undefined) { updates.push('role = ?'); values.push(normalizeUserRole(role)); }
+    if (permissions !== undefined) { updates.push('permissions = ?'); values.push(permissions ? JSON.stringify(permissions) : null); }
     if (status) { updates.push('status = ?'); values.push(status); }
     if (updates.length === 0) return res.status(400).json({ message: 'No user fields to update' });
     values.push(req.params.id);
     await pool.query(`UPDATE users SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values);
-    const [rows] = await pool.query('SELECT id, full_name AS name, email, role, status, created_at, updated_at FROM users WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query('SELECT id, full_name AS name, email, role, permissions, status, created_at, updated_at FROM users WHERE id = ?', [req.params.id]);
     res.json(mapUser(rows[0]));
   } catch (error) {
     console.error('Error updating user', error);
@@ -1326,7 +1331,7 @@ app.post('/api/auth/login', async (req, res) => {
     let dbAvailable = true;
 
     try {
-      const [rows] = await pool.query('SELECT id, full_name AS name, email, role, password_hash FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
+      const [rows] = await pool.query('SELECT id, full_name AS name, email, role, permissions, password_hash FROM users WHERE LOWER(TRIM(email)) = ?', [normalizedEmail]);
       userRow = rows && rows[0] ? rows[0] : null;
     } catch (dbError) {
       console.error('Database auth lookup failed', dbError.message);
@@ -1342,6 +1347,7 @@ app.post('/api/auth/login', async (req, res) => {
             name: ADMIN_FULL_NAME,
             email: normalizedEmail,
             role: 'Admin',
+            permissions: null,
           },
         });
       }
@@ -1357,8 +1363,6 @@ app.post('/api/auth/login', async (req, res) => {
 
     if (directMatch || canUseFallback) {
       // Create admin user in database if it doesn't exist yet
-
-
       if (dbAvailable && !userRow) {
         try {
           await pool.query(
@@ -1385,6 +1389,7 @@ app.post('/api/auth/login', async (req, res) => {
           name: user.name,
           email: user.email,
           role,
+          permissions: safeParseArray(user.permissions),
         },
       });
       return;

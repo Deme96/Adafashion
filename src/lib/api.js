@@ -17,13 +17,14 @@ export const getApiBaseUrl = () => {
 
   if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname || 'localhost';
+    const host = window.location.host || hostname;
     const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
     if (isLocalHost) {
       const protocol = window.location.protocol || 'http:';
       return `${protocol}//${hostname}:4000/api`;
     }
 
-    return `${window.location.protocol || 'https:'}//${window.location.host}/api`;
+    return `${window.location.protocol || 'https:'}//${host}/api`;
   }
 
   return 'http://localhost:4000/api';

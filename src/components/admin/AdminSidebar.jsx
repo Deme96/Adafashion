@@ -20,7 +20,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     { to: '/admin/vendas', icon: BarChart3, label: t('sales'), menuKey: 'sales' },
     { to: '/admin/reservas', icon: CalendarClock, label: 'Reservas', menuKey: 'reservations' },
     { to: '/admin/financas', icon: DollarSign, label: t('finances'), menuKey: 'finances' },
-  ].filter((item) => canAccessMenu(item.menuKey, user?.role));
+  ].filter((item) => canAccessMenu(item.menuKey, user));
 
   const handleLogout = () => {
     logout();
@@ -88,7 +88,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
         {/* Footer */}
         <div className="px-4 py-4 border-t border-white/5 space-y-2">
-          {canAccessMenu('settings', user?.role) && (
+          {canAccessMenu('settings', user) && (
             <NavLink
               to="/admin/configuracoes"
               onClick={onClose}

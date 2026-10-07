@@ -1,11 +1,12 @@
 // ========== Ada Fashion Settings Page ==========
 import { useState, useEffect } from 'react';
-import { Save, Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Save, Plus, Pencil, Trash2, Search, Shield, ShieldCheck, CheckSquare, Square, Lock, Unlock, Sliders } from 'lucide-react';
 import api from '../../lib/api';
 import { formatDate, formatCurrency } from '../../lib/utils';
 import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { fileToBase64, videoToBase64 } from '../../lib/utils';
+import { MENU_RESOURCES, ROLE_PERMISSIONS, getRolePermissions, canAccessMenu } from '../../lib/auth';
 
 const tabs = ['Geral', 'Usuários', 'Promoções', 'Vídeos', 'Notícias', 'Fotos Carousel', 'Logs'];
 
@@ -84,11 +85,59 @@ const Settings = () => {
     }
   };
 
+  const handleUserRoleChange = (newRole) => {
+    if (newRole === 'Admin') {
+      setForm(f => ({
+        ...f,
+        role: 'Admin',
+        permissions: MENU_RESOURCES.map(m => m.key),
+      }));
+    } else if (newRole === 'Personalizado') {
+      setForm(f => ({
+        ...f,
+        role: 'Personalizado',
+        permissions: f.permissions && f.permissions.length > 0 ? f.permissions : ROLE_PERMISSIONS['Vendedor'],
+      }));
+    } else {
+      setForm(f => ({
+        ...f,
+        role: newRole,
+        permissions: ROLE_PERMISSIONS[newRole] || [],
+      }));
+    }
+  };
+
+  const toggleUserPermission = (permKey) => {
+    if (form.role === 'Admin') return;
+    const current = form.permissions || [];
+    let updated;
+    if (current.includes(permKey)) {
+      updated = current.filter(k => k !== permKey);
+    } else {
+      updated = [...current, permKey];
+    }
+
+    const isGerente = JSON.stringify([...updated].sort()) === JSON.stringify([...ROLE_PERMISSIONS.Gerente].sort());
+    const isVendedor = JSON.stringify([...updated].sort()) === JSON.stringify([...ROLE_PERMISSIONS.Vendedor].sort());
+    const isVisualizador = JSON.stringify([...updated].sort()) === JSON.stringify([...ROLE_PERMISSIONS.Visualizador].sort());
+
+    let inferredRole = 'Personalizado';
+    if (isGerente) inferredRole = 'Gerente';
+    else if (isVendedor) inferredRole = 'Vendedor';
+    else if (isVisualizador) inferredRole = 'Visualizador';
+
+    setForm(f => ({
+      ...f,
+      role: inferredRole,
+      permissions: updated,
+    }));
+  };
+
   const openCreate = (type) => {
     setModalType(type);
     setEditing(null);
     const defaults = {
-      user: { name: '', email: '', password: '', role: 'Vendedor' },
+      user: { name: '', email: '', password: '', role: 'Vendedor', permissions: ROLE_PERMISSIONS['Vendedor'] },
       promotion: { name: '', description: '', discount_percent: '', start_date: '', end_date: '', is_active: true, applicable_categories: '', selected_products: [], banner_image: '' },
       video: { title: '', url: '', is_published: true },
       news: { title: '', content: '', image: '', is_published: true },
@@ -101,11 +150,22 @@ const Settings = () => {
   const openEdit = (type, item) => {
     setModalType(type);
     setEditing(item);
-    setForm({
-      ...item,
-      applicable_categories: Array.isArray(item.applicable_categories) ? item.applicable_categories.join(', ') : item.applicable_categories || '',
-      discount_percent: item.discount_percent || '',
-    });
+    if (type === 'user') {
+      const userPerms = Array.isArray(item.permissions) && item.permissions.length > 0
+        ? item.permissions
+        : getRolePermissions(item);
+      setForm({
+        ...item,
+        role: item.role || 'Vendedor',
+        permissions: userPerms,
+      });
+    } else {
+      setForm({
+        ...item,
+        applicable_categories: Array.isArray(item.applicable_categories) ? item.applicable_categories.join(', ') : item.applicable_categories || '',
+        discount_percent: item.discount_percent || '',
+      });
+    }
     setModalOpen(true);
   };
 
@@ -310,21 +370,62 @@ const Settings = () => {
         {/* ---- USUÁRIOS ---- */}
         {activeTab === 'Usuários' && (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <button onClick={() => openCreate('user')} className="inline-flex items-center gap-2 bg-rose-400 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-500 transition-colors">
+            <div className="flex justify-between items-center bg-rose-50/60 p-4 rounded-xl border border-rose-100">
+              <div>
+                <h3 className="font-bold text-gray-800 text-sm flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-rose-500" /> Privilégios e Controle de Acesso
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Defina o modelo de perfil de cada usuário ou escolha exatamente quais menus da plataforma cada um poderá acessar.
+                </p>
+              </div>
+              <button onClick={() => openCreate('user')} className="inline-flex items-center gap-2 bg-rose-400 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-rose-500 transition-colors shadow-sm shrink-0">
                 <Plus size={16} /> Novo Usuário
               </button>
             </div>
             <div className="space-y-3">
               {users.map(u => (
-                <div key={u.id} className="flex items-center justify-between p-4 bg-rose-50/50 rounded-xl">
-                  <div>
-                    <p className="font-semibold text-gray-900">{u.name}</p>
-                    <p className="text-xs text-gray-500">{u.email} • Papel: <span className="font-medium text-rose-700">{u.role}</span></p>
+                <div key={u.id} className="p-4 bg-white border border-rose-100 rounded-xl space-y-3 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm">
+                        {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{u.name}</p>
+                        <p className="text-xs text-gray-500">{u.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        u.role === 'Admin' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
+                        u.role === 'Gerente' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+                        u.role === 'Vendedor' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' :
+                        u.role === 'Visualizador' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                        'bg-rose-100 text-rose-700 border border-rose-200'
+                      }`}>
+                        {u.role === 'Personalizado' ? '⚙️ Personalizado' : u.role}
+                      </span>
+                      <div className="flex gap-1">
+                        <button onClick={() => openEdit('user', u)} title="Editar privilégios" className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors"><Pencil size={15} /></button>
+                        <button onClick={() => { setDeleteTarget({ collection: 'users', id: u.id }); setConfirmOpen(true); }} title="Remover usuário" className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"><Trash2 size={15} /></button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => openEdit('user', u)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700"><Pencil size={15} /></button>
-                    <button onClick={() => { setDeleteTarget({ collection: 'users', id: u.id }); setConfirmOpen(true); }} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600"><Trash2 size={15} /></button>
+
+                  {/* Badges of allowed menus */}
+                  <div className="pt-2 border-t border-gray-100 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] font-semibold text-gray-400 mr-1">Menus Permitidos:</span>
+                    {MENU_RESOURCES.map(res => {
+                      const hasPerm = canAccessMenu(res.key, u);
+                      return (
+                        <span key={res.key} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
+                          hasPerm ? 'bg-rose-50 text-rose-700 border border-rose-200/80 font-semibold' : 'bg-gray-50 text-gray-300 line-through opacity-40'
+                        }`}>
+                          {hasPerm ? '✓' : '✕'} {res.label.split('/')[0].trim()}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -501,32 +602,98 @@ const Settings = () => {
           {modalType === 'user' && (
             <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Nome *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Nome Completo *</label>
                 <input type="text" value={form.name || ''} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  autoComplete="off" />
+                  autoComplete="off" placeholder="Ex: Maria Silva" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">E-mail *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">E-mail de Acesso *</label>
                 <input type="email" value={form.email || ''} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  autoComplete="off" />
+                  autoComplete="off" placeholder="Ex: maria@adafashion.com" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Senha {editing ? '(Deixe em branco para não alterar)' : '*'}</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Senha {editing ? '(Deixe em branco para manter)' : '*'}</label>
                 <input type="password" value={form.password || ''} onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  autoComplete="new-password" />
+                  autoComplete="new-password" placeholder="••••••••" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Papel (Privilégios) *</label>
-                <select value={form.role || 'Vendedor'} onChange={(e) => setForm(f => ({ ...f, role: e.target.value }))}
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Modelo Base de Perfil *</label>
+                <select value={form.role || 'Vendedor'} onChange={(e) => handleUserRoleChange(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white">
-                  <option value="Admin">Admin (Acesso Total)</option>
-                  <option value="Gerente">Gerente (Produtos, Compras, Vendas, Estoque, Finanças)</option>
-                  <option value="Vendedor">Vendedor (Vendas e Pedidos)</option>
-                  <option value="Visualizador">Visualizador (Somente Leitura)</option>
+                  <option value="Admin">Admin (Acesso Total ilimitado a todos os recursos)</option>
+                  <option value="Gerente">Gerente (Dashboard, Estoque, Compras, Vendas, Reservas, Finanças)</option>
+                  <option value="Vendedor">Vendedor (Dashboard, Vendas, Reservas)</option>
+                  <option value="Visualizador">Visualizador (Consulta e Leitura)</option>
+                  <option value="Personalizado">Personalizado (Escolha de menus sob medida)</option>
                 </select>
+              </div>
+
+              {/* Customizable Menu Resources Section */}
+              <div className="pt-3 border-t border-gray-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+                      <Sliders size={15} className="text-rose-500" /> Permissões Personalizadas de Menus
+                    </label>
+                    <p className="text-xs text-gray-500">Marque quais módulos o usuário poderá ver e usar:</p>
+                  </div>
+                  {form.role !== 'Admin' && (
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setForm(f => ({ ...f, role: 'Personalizado', permissions: MENU_RESOURCES.map(m => m.key) }))}
+                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 px-2 py-1 rounded-md">
+                        Marcar Todos
+                      </button>
+                      <button type="button" onClick={() => setForm(f => ({ ...f, role: 'Personalizado', permissions: [] }))}
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-700 bg-gray-100 px-2 py-1 rounded-md">
+                        Desmarcar Todos
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                  {MENU_RESOURCES.map((item) => {
+                    const isChecked = form.role === 'Admin' || (form.permissions || []).includes(item.key);
+                    const isDisabled = form.role === 'Admin';
+                    return (
+                      <div
+                        key={item.key}
+                        onClick={() => !isDisabled && toggleUserPermission(item.key)}
+                        className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
+                          isDisabled
+                            ? 'bg-purple-50/50 border-purple-100 cursor-not-allowed opacity-90'
+                            : isChecked
+                            ? 'bg-rose-50/60 border-rose-200 cursor-pointer shadow-sm'
+                            : 'bg-gray-50/60 border-gray-200 hover:border-rose-200 cursor-pointer'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          disabled={isDisabled}
+                          onChange={() => {}}
+                          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-bold ${isChecked ? 'text-rose-900' : 'text-gray-700'}`}>
+                            {item.label}
+                          </p>
+                          <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {form.role === 'Admin' && (
+                  <p className="text-xs text-purple-700 bg-purple-50 p-2.5 rounded-lg border border-purple-100 flex items-center gap-1.5">
+                    <Shield size={14} /> Administradores possuem acesso total a todos os menus do sistema.
+                  </p>
+                )}
               </div>
             </>
           )}

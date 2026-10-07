@@ -22,13 +22,13 @@ import Sales from './pages/admin/Sales';
 import Reservations from './pages/admin/Reservations';
 import Finances from './pages/admin/Finances';
 import Settings from './pages/admin/Settings';
-import { getLoggedUser, hasAccess, isAuthenticated } from './lib/auth';
+import { getLoggedUser, hasAccess, isAuthenticated, canAccessMenu } from './lib/auth';
 import { Navigate } from 'react-router-dom';
 import GlobalToast from './components/ui/Toast';
 
-const ProtectedRoute = ({ element, allowedRoles }) => {
+const ProtectedRoute = ({ element, allowedRoles, menuKey }) => {
   if (!isAuthenticated()) return <Navigate to="/admin/login" replace />;
-  const allowed = hasAccess(allowedRoles);
+  const allowed = menuKey ? canAccessMenu(menuKey) : hasAccess(allowedRoles);
   if (!allowed) return <Navigate to="/admin" replace />;
   return element;
 };
@@ -68,13 +68,13 @@ function App() {
 
           {/* Admin */}
           <Route path="/admin/*" element={<AdminLayout />}>
-            <Route index element={<ProtectedRoute element={<Dashboard />} allowedRoles={['Admin', 'Gerente', 'Vendedor', 'Visualizador']} />} />
-            <Route path="controle-estoque" element={<ProtectedRoute element={<Stock />} allowedRoles={['Admin', 'Gerente', 'Visualizador']} />} />
-            <Route path="compras" element={<ProtectedRoute element={<Purchases />} allowedRoles={['Admin', 'Gerente', 'Visualizador']} />} />
-            <Route path="vendas" element={<ProtectedRoute element={<Sales />} allowedRoles={['Admin', 'Gerente', 'Vendedor', 'Visualizador']} />} />
-            <Route path="reservas" element={<ProtectedRoute element={<Reservations />} allowedRoles={['Admin', 'Gerente', 'Vendedor', 'Visualizador']} />} />
-            <Route path="financas" element={<ProtectedRoute element={<Finances />} allowedRoles={['Admin', 'Gerente', 'Visualizador']} />} />
-            <Route path="configuracoes" element={<ProtectedRoute element={<Settings />} allowedRoles={['Admin']} />} />
+            <Route index element={<ProtectedRoute element={<Dashboard />} menuKey="dashboard" />} />
+            <Route path="controle-estoque" element={<ProtectedRoute element={<Stock />} menuKey="inventory" />} />
+            <Route path="compras" element={<ProtectedRoute element={<Purchases />} menuKey="purchases" />} />
+            <Route path="vendas" element={<ProtectedRoute element={<Sales />} menuKey="sales" />} />
+            <Route path="reservas" element={<ProtectedRoute element={<Reservations />} menuKey="reservations" />} />
+            <Route path="financas" element={<ProtectedRoute element={<Finances />} menuKey="finances" />} />
+            <Route path="configuracoes" element={<ProtectedRoute element={<Settings />} menuKey="settings" />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
         </Routes>
