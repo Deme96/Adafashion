@@ -11,6 +11,7 @@ import {
 import api from '../../lib/api';
 import { formatCurrency, getLastMonths, PAYMENT_METHODS } from '../../lib/utils';
 import StatsCard from '../../components/admin/StatsCard';
+import { hasPermission } from '../../lib/auth';
 
 const COLORS = ['#be185d', '#ec4899', '#f472b6', '#f9a8d4', '#fce7f3', '#9f1239', '#e11d48', '#fb7185'];
 
@@ -159,7 +160,8 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {hasPermission('dashboard.view_summary') && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           icon={DollarSign}
           label="Receita Total"
@@ -187,8 +189,10 @@ const Dashboard = () => {
           color="red"
         />
       </div>
+      )}
 
       {/* Charts Row 1: Sales vs Purchases */}
+      {hasPermission('dashboard.view_metrics') && (
       <div className="bg-white rounded-2xl border border-pink-100 p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -218,8 +222,10 @@ const Dashboard = () => {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      )}
 
       {/* Charts Row 2: Most/Least Ordered + Payment Methods */}
+      {hasPermission('dashboard.view_stats') && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Most Ordered Products */}
         <div className="bg-white rounded-2xl border border-pink-100 p-6">
@@ -273,8 +279,10 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Payment Methods Pie */}
+      {hasPermission('dashboard.view_alerts') && (
       <div className="bg-white rounded-2xl border border-pink-100 p-6">
         <div className="mb-6">
           <h2 className="text-lg font-bold text-gray-900">Métodos de Pagamento</h2>
@@ -318,6 +326,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };
