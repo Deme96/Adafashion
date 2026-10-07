@@ -1,4 +1,4 @@
-// ========== Ada Fashion Authentication & Customizable Permissions ==========
+// ========== Ada Fashion Authentication & Sub-Resource Customizable Permissions ==========
 
 import { getApiBaseUrl } from './api.js';
 
@@ -7,20 +7,134 @@ const ADMIN_EMAIL = 'admin@adafashion.com';
 const ADMIN_PASS = 'admin123';
 
 export const MENU_RESOURCES = [
-  { key: 'dashboard', label: 'Dashboard / Visão Geral', icon: 'LayoutDashboard', description: 'Visualizar resumo, métricas e estatísticas da loja' },
-  { key: 'inventory', label: 'Controle de Estoque', icon: 'Warehouse', description: 'Cadastrar, editar e controlar estoque de produtos' },
-  { key: 'purchases', label: 'Compras', icon: 'ShoppingCart', description: 'Registo e controle de compras de reposição' },
-  { key: 'sales', label: 'Vendas', icon: 'BarChart3', description: 'Registo e acompanhamento de vendas e faturamento' },
-  { key: 'reservations', label: 'Reservas', icon: 'CalendarClock', description: 'Gestão de reservas de produtos para clientes' },
-  { key: 'finances', label: 'Finanças', icon: 'DollarSign', description: 'Controle de fluxo de caixa, despesas e lucros' },
-  { key: 'settings', label: 'Configurações', icon: 'Settings', description: 'Gestão de usuários, promoções, notícias e loja' },
+  {
+    key: 'dashboard',
+    label: 'Dashboard / Visão Geral',
+    icon: 'LayoutDashboard',
+    description: 'Painel principal de métricas e indicadores de desempenho',
+    features: [
+      { key: 'dashboard.view_summary', label: 'Visualizar Resumo de Vendas e Faturamento' },
+      { key: 'dashboard.view_metrics', label: 'Visualizar Métricas Principais (Pedidos, Ticket Médio)' },
+      { key: 'dashboard.view_stats', label: 'Visualizar Gráficos e Estatísticas de Vendas' },
+      { key: 'dashboard.view_alerts', label: 'Visualizar Alertas de Estoque Baixo e Notificações' },
+    ]
+  },
+  {
+    key: 'inventory',
+    label: 'Controle de Estoque',
+    icon: 'Warehouse',
+    description: 'Gestão de catálogo de produtos e movimentações de estoque',
+    features: [
+      { key: 'inventory.view', label: 'Visualizar Produtos e Quantidades em Estoque' },
+      { key: 'inventory.create', label: 'Cadastrar Novos Produtos' },
+      { key: 'inventory.edit', label: 'Editar Dados de Produtos Existentes' },
+      { key: 'inventory.delete', label: 'Excluir Produtos do Catálogo' },
+      { key: 'inventory.adjust_stock', label: 'Registrar Ajustes, Entradas e Saídas de Estoque' },
+    ]
+  },
+  {
+    key: 'purchases',
+    label: 'Compras',
+    icon: 'ShoppingCart',
+    description: 'Registro e controle de compras de fornecedores para reposição',
+    features: [
+      { key: 'purchases.view', label: 'Visualizar Histórico e Registros de Compras' },
+      { key: 'purchases.create', label: 'Registrar Novas Compras de Reposição' },
+      { key: 'purchases.edit', label: 'Editar Registros de Compras' },
+      { key: 'purchases.delete', label: 'Excluir Registros de Compras' },
+    ]
+  },
+  {
+    key: 'sales',
+    label: 'Vendas',
+    icon: 'BarChart3',
+    description: 'Registro de vendas, caixa (PDV) e relatórios de faturamento',
+    features: [
+      { key: 'sales.view', label: 'Visualizar Histórico de Vendas e Relatórios' },
+      { key: 'sales.create', label: 'Registrar Novas Vendas no Caixa / PDV' },
+      { key: 'sales.edit', label: 'Editar Registros e Alterar Status de Vendas' },
+      { key: 'sales.delete', label: 'Cancelar / Excluir Registros de Vendas' },
+    ]
+  },
+  {
+    key: 'reservations',
+    label: 'Reservas',
+    icon: 'CalendarClock',
+    description: 'Gestão de reservas de produtos solicitadas por clientes',
+    features: [
+      { key: 'reservations.view', label: 'Visualizar Lista de Reservas' },
+      { key: 'reservations.create', label: 'Registrar Novas Reservas de Peças' },
+      { key: 'reservations.edit', label: 'Confirmar / Alterar Status de Reservas' },
+      { key: 'reservations.delete', label: 'Excluir Registros de Reservas' },
+    ]
+  },
+  {
+    key: 'finances',
+    label: 'Finanças',
+    icon: 'DollarSign',
+    description: 'Controle de entradas, saídas, despesas e fluxo de caixa',
+    features: [
+      { key: 'finances.view', label: 'Visualizar Relatórios Financeiros e DRE' },
+      { key: 'finances.create_entry', label: 'Lançar Novas Entradas e Despesas' },
+      { key: 'finances.edit_entry', label: 'Editar Registros Financeiros' },
+      { key: 'finances.delete_entry', label: 'Excluir Lançamentos Financeiros' },
+    ]
+  },
+  {
+    key: 'settings',
+    label: 'Configurações',
+    icon: 'Settings',
+    description: 'Definições do sistema, gestão de equipe e conteúdos da loja',
+    features: [
+      { key: 'settings.general', label: 'Alterar Configurações Gerais da Loja (Nome, Moeda)' },
+      { key: 'settings.users', label: 'Gerenciar Usuários e Atribuir Privilégios' },
+      { key: 'settings.promotions', label: 'Criar e Gerenciar Promoções e Banners' },
+      { key: 'settings.content', label: 'Gerenciar Vídeos, Notícias e Fotos do Carousel' },
+      { key: 'settings.logs', label: 'Visualizar e Limpar Activity Logs do Sistema' },
+    ]
+  }
 ];
 
+export const getAllFeatureKeysForMenu = (menuKey) => {
+  const menu = MENU_RESOURCES.find(m => m.key === menuKey);
+  if (!menu) return [menuKey];
+  return [menuKey, ...menu.features.map(f => f.key)];
+};
+
+export const getAllSystemPermissionKeys = () => {
+  const keys = [];
+  MENU_RESOURCES.forEach(menu => {
+    keys.push(menu.key);
+    menu.features.forEach(feat => keys.push(feat.key));
+  });
+  return keys;
+};
+
+const ALL_KEYS = getAllSystemPermissionKeys();
+
 export const ROLE_PERMISSIONS = {
-  Admin: ['dashboard', 'inventory', 'purchases', 'sales', 'reservations', 'finances', 'settings'],
-  Gerente: ['dashboard', 'inventory', 'purchases', 'sales', 'reservations', 'finances'],
-  Vendedor: ['dashboard', 'sales', 'reservations'],
-  Visualizador: ['dashboard', 'inventory', 'purchases', 'sales', 'reservations', 'finances'],
+  Admin: ALL_KEYS,
+  Gerente: [
+    ...getAllFeatureKeysForMenu('dashboard'),
+    ...getAllFeatureKeysForMenu('inventory'),
+    ...getAllFeatureKeysForMenu('purchases'),
+    ...getAllFeatureKeysForMenu('sales'),
+    ...getAllFeatureKeysForMenu('reservations'),
+    ...getAllFeatureKeysForMenu('finances'),
+  ],
+  Vendedor: [
+    ...getAllFeatureKeysForMenu('dashboard'),
+    ...getAllFeatureKeysForMenu('sales'),
+    ...getAllFeatureKeysForMenu('reservations'),
+  ],
+  Visualizador: [
+    'dashboard', 'dashboard.view_summary', 'dashboard.view_metrics', 'dashboard.view_stats', 'dashboard.view_alerts',
+    'inventory', 'inventory.view',
+    'purchases', 'purchases.view',
+    'sales', 'sales.view',
+    'reservations', 'reservations.view',
+    'finances', 'finances.view',
+  ],
   Personalizado: [],
 };
 
@@ -57,14 +171,14 @@ const getRolePermissions = (roleOrUser) => {
 
   const normalizedRole = normalizeRole(role);
   if (normalizedRole === 'Admin') {
-    return MENU_RESOURCES.map((m) => m.key);
+    return ALL_KEYS;
   }
 
   if (user && Array.isArray(user.permissions) && user.permissions.length > 0) {
     return user.permissions;
   }
 
-  return ROLE_PERMISSIONS[normalizedRole] || ROLE_PERMISSIONS.Admin;
+  return ROLE_PERMISSIONS[normalizedRole] || ALL_KEYS;
 };
 
 const getStoredUser = () => {
@@ -143,7 +257,8 @@ export const canAccessMenu = (menuKey, userOrRole = null) => {
     if (typeof userOrRole === 'string') {
       const normalizedRole = normalizeRole(userOrRole);
       if (normalizedRole === 'Admin') return true;
-      return (ROLE_PERMISSIONS[normalizedRole] || []).includes(menuKey);
+      const rolePerms = ROLE_PERMISSIONS[normalizedRole] || [];
+      return rolePerms.includes(menuKey) || rolePerms.some(p => p.startsWith(`${menuKey}.`));
     }
     return false;
   }
@@ -151,11 +266,42 @@ export const canAccessMenu = (menuKey, userOrRole = null) => {
   const userRole = normalizeRole(user.role);
   if (userRole === 'Admin') return true;
 
-  if (Array.isArray(user.permissions) && user.permissions.length > 0) {
-    return user.permissions.includes(menuKey);
+  const userPerms = (Array.isArray(user.permissions) && user.permissions.length > 0)
+    ? user.permissions
+    : (ROLE_PERMISSIONS[userRole] || []);
+
+  // Check if direct menu key or any sub-feature key of menu exists
+  return userPerms.includes(menuKey) || userPerms.some(p => p.startsWith(`${menuKey}.`));
+};
+
+export const hasPermission = (permissionKey, userOrRole = null) => {
+  let user = null;
+  if (userOrRole && typeof userOrRole === 'object') {
+    user = userOrRole;
+  } else {
+    user = getLoggedUser();
   }
 
-  return (ROLE_PERMISSIONS[userRole] || ROLE_PERMISSIONS.Admin).includes(menuKey);
+  if (!user) {
+    if (typeof userOrRole === 'string') {
+      const normalizedRole = normalizeRole(userOrRole);
+      if (normalizedRole === 'Admin') return true;
+      const rolePerms = ROLE_PERMISSIONS[normalizedRole] || [];
+      const parentKey = permissionKey.split('.')[0];
+      return rolePerms.includes(permissionKey) || rolePerms.includes(parentKey);
+    }
+    return false;
+  }
+
+  const userRole = normalizeRole(user.role);
+  if (userRole === 'Admin') return true;
+
+  const userPerms = (Array.isArray(user.permissions) && user.permissions.length > 0)
+    ? user.permissions
+    : (ROLE_PERMISSIONS[userRole] || []);
+
+  const parentKey = permissionKey.split('.')[0];
+  return userPerms.includes(permissionKey) || userPerms.includes(parentKey);
 };
 
 export const hasAccess = (allowedRolesOrMenuKey = []) => {

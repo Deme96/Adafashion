@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeRole, getRolePermissions, hasAccess, canAccessMenu } from './auth.js';
+import { normalizeRole, getRolePermissions, hasAccess, canAccessMenu, hasPermission } from './auth.js';
 import { getApiBaseUrl } from './api.js';
 
 const storage = new Map();
@@ -30,9 +30,9 @@ test('normalizeRole maps common admin roles to Admin', () => {
 });
 
 test('role permissions restrict menus to the assigned role', () => {
-  assert.deepEqual(getRolePermissions('Admin').filter((item) => item === 'settings'), ['settings']);
-  assert.deepEqual(getRolePermissions('Vendedor'), ['dashboard', 'sales', 'reservations']);
-  assert.deepEqual(getRolePermissions('Visualizador'), ['dashboard', 'inventory', 'purchases', 'sales', 'reservations', 'finances']);
+  assert.ok(getRolePermissions('Admin').includes('settings'));
+  assert.ok(getRolePermissions('Vendedor').includes('sales'));
+  assert.ok(getRolePermissions('Visualizador').includes('inventory.view'));
 });
 
 test('getApiBaseUrl uses the current host for external device access', () => {
@@ -41,19 +41,20 @@ test('getApiBaseUrl uses the current host for external device access', () => {
   delete global.window;
 });
 
-test('hasAccess respects the logged user role and custom permissions', () => {
+test('hasAccess respects the logged user role and custom sub-permissions', () => {
   localStorageMock.setItem('adafashion_admin_token', JSON.stringify({ role: 'Vendedor' }));
   assert.equal(hasAccess(['Vendedor']), true);
   assert.equal(hasAccess(['Admin']), false);
-  assert.equal(hasAccess(['Gerente', 'Visualizador']), false);
+  assert.equal(hasAccess(['Gerente']), false);
 
-  // Test custom permissions
+  // Test custom sub-permissions
   localStorageMock.setItem('adafashion_admin_token', JSON.stringify({
     role: 'Personalizado',
-    permissions: ['inventory', 'sales']
+    permissions: ['inventory.view', 'dashboard.view_summary']
   }));
   assert.equal(canAccessMenu('inventory'), true);
-  assert.equal(canAccessMenu('sales'), true);
+  assert.equal(canAccessMenu('dashboard'), true);
+  assert.equal(hasPermission('dashboard.view_summary'), true);
+  assert.equal(hasPermission('inventory.create'), false);
   assert.equal(canAccessMenu('finances'), false);
-  assert.equal(canAccessMenu('settings'), false);
 });

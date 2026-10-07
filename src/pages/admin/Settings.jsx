@@ -6,7 +6,7 @@ import { formatDate, formatCurrency } from '../../lib/utils';
 import Modal from '../../components/ui/Modal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { fileToBase64, videoToBase64 } from '../../lib/utils';
-import { MENU_RESOURCES, ROLE_PERMISSIONS, getRolePermissions, canAccessMenu } from '../../lib/auth';
+import { MENU_RESOURCES, ROLE_PERMISSIONS, getRolePermissions, canAccessMenu, hasPermission } from '../../lib/auth';
 
 const tabs = ['Geral', 'Usuários', 'Promoções', 'Vídeos', 'Notícias', 'Fotos Carousel', 'Logs'];
 
@@ -90,7 +90,7 @@ const Settings = () => {
       setForm(f => ({
         ...f,
         role: 'Admin',
-        permissions: MENU_RESOURCES.map(m => m.key),
+        permissions: ROLE_PERMISSIONS['Admin'],
       }));
     } else if (newRole === 'Personalizado') {
       setForm(f => ({
@@ -107,28 +107,43 @@ const Settings = () => {
     }
   };
 
-  const toggleUserPermission = (permKey) => {
+  const toggleMenuPermissions = (menuObj) => {
     if (form.role === 'Admin') return;
     const current = form.permissions || [];
+    const menuFeatureKeys = [menuObj.key, ...menuObj.features.map(f => f.key)];
+    const allChecked = menuFeatureKeys.every(k => current.includes(k));
+
     let updated;
-    if (current.includes(permKey)) {
-      updated = current.filter(k => k !== permKey);
+    if (allChecked) {
+      updated = current.filter(k => !menuFeatureKeys.includes(k));
     } else {
-      updated = [...current, permKey];
+      updated = Array.from(new Set([...current, ...menuFeatureKeys]));
     }
-
-    const isGerente = JSON.stringify([...updated].sort()) === JSON.stringify([...ROLE_PERMISSIONS.Gerente].sort());
-    const isVendedor = JSON.stringify([...updated].sort()) === JSON.stringify([...ROLE_PERMISSIONS.Vendedor].sort());
-    const isVisualizador = JSON.stringify([...updated].sort()) === JSON.stringify([...ROLE_PERMISSIONS.Visualizador].sort());
-
-    let inferredRole = 'Personalizado';
-    if (isGerente) inferredRole = 'Gerente';
-    else if (isVendedor) inferredRole = 'Vendedor';
-    else if (isVisualizador) inferredRole = 'Visualizador';
 
     setForm(f => ({
       ...f,
-      role: inferredRole,
+      role: 'Personalizado',
+      permissions: updated,
+    }));
+  };
+
+  const toggleSubFeaturePermission = (menuObj, featureKey) => {
+    if (form.role === 'Admin') return;
+    const current = form.permissions || [];
+    let updated;
+    if (current.includes(featureKey)) {
+      updated = current.filter(k => k !== featureKey);
+      const hasOtherFeatures = menuObj.features.some(f => f.key !== featureKey && updated.includes(f.key));
+      if (!hasOtherFeatures) {
+        updated = updated.filter(k => k !== menuObj.key);
+      }
+    } else {
+      updated = Array.from(new Set([...current, featureKey, menuObj.key]));
+    }
+
+    setForm(f => ({
+      ...f,
+      role: 'Personalizado',
       permissions: updated,
     }));
   };
@@ -654,37 +669,61 @@ const Settings = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto p-1">
                   {MENU_RESOURCES.map((item) => {
-                    const isChecked = form.role === 'Admin' || (form.permissions || []).includes(item.key);
+                    const isMenuChecked = form.role === 'Admin' || (form.permissions || []).includes(item.key) || item.features.some(f => (form.permissions || []).includes(f.key));
                     const isDisabled = form.role === 'Admin';
                     return (
-                      <div
-                        key={item.key}
-                        onClick={() => !isDisabled && toggleUserPermission(item.key)}
-                        className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
-                          isDisabled
-                            ? 'bg-purple-50/50 border-purple-100 cursor-not-allowed opacity-90'
-                            : isChecked
-                            ? 'bg-rose-50/60 border-rose-200 cursor-pointer shadow-sm'
-                            : 'bg-gray-50/60 border-gray-200 hover:border-rose-200 cursor-pointer'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          disabled={isDisabled}
-                          onChange={() => {}}
-                          className="mt-0.5 w-4 h-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-bold ${isChecked ? 'text-rose-900' : 'text-gray-700'}`}>
-                            {item.label}
-                          </p>
-                          <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
-                            {item.description}
-                          </p>
+                      <div key={item.key} className="p-3 rounded-xl border bg-gray-50/30 border-gray-200 flex flex-col gap-3">
+                        <div
+                          onClick={() => !isDisabled && toggleMenuPermissions(item)}
+                          className="flex items-start gap-3 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isMenuChecked}
+                            disabled={isDisabled}
+                            onChange={() => {}}
+                            className="mt-0.5 w-4 h-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-bold ${isMenuChecked ? 'text-rose-900' : 'text-gray-700'}`}>
+                              {item.label}
+                            </p>
+                            <p className="text-[11px] text-gray-500 leading-tight mt-0.5">
+                              {item.description}
+                            </p>
+                          </div>
                         </div>
+
+                        {item.features && item.features.length > 0 && (
+                          <div className="ml-7 grid grid-cols-1 sm:grid-cols-2 gap-2 border-l-2 border-gray-200 pl-3">
+                            {item.features.map(feature => {
+                              const isFeatureChecked = form.role === 'Admin' || (form.permissions || []).includes(feature.key);
+                              return (
+                                <div
+                                  key={feature.key}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isDisabled) toggleSubFeaturePermission(item, feature.key);
+                                  }}
+                                  className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-100"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isFeatureChecked}
+                                    disabled={isDisabled}
+                                    onChange={() => {}}
+                                    className="w-3.5 h-3.5 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer"
+                                  />
+                                  <span className={`text-[11px] ${isFeatureChecked ? 'font-semibold text-rose-800' : 'text-gray-600'}`}>
+                                    {feature.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
