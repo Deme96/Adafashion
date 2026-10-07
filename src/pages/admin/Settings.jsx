@@ -8,10 +8,26 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { fileToBase64, videoToBase64 } from '../../lib/utils';
 import { MENU_RESOURCES, ROLE_PERMISSIONS, getRolePermissions, canAccessMenu, hasPermission, getLoggedUser } from '../../lib/auth';
 
-const tabs = ['Geral', 'Usuários', 'Promoções', 'Vídeos', 'Notícias', 'Fotos Carousel', 'Logs'];
+const ALL_TABS = ['Geral', 'Usuários', 'Promoções', 'Vídeos', 'Notícias', 'Fotos Carousel', 'Logs'];
 
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState('Geral');
+  const [activeTab, setActiveTab] = useState('');
+  const [allowedTabs, setAllowedTabs] = useState([]);
+
+  useEffect(() => {
+    const tabs = ALL_TABS.filter(tab => {
+      if (tab === 'Geral') return hasPermission('settings.general');
+      if (tab === 'Usuários') return hasPermission('settings.users');
+      if (tab === 'Promoções') return hasPermission('settings.promotions');
+      if (tab === 'Vídeos' || tab === 'Notícias' || tab === 'Fotos Carousel') return hasPermission('settings.content');
+      if (tab === 'Logs') return hasPermission('settings.logs');
+      return false;
+    });
+    setAllowedTabs(tabs);
+    if (tabs.length > 0 && !tabs.includes(activeTab)) {
+      setActiveTab(tabs[0]);
+    }
+  }, [activeTab]);
 
   // General
   const [settings, setSettings] = useState({ store_name: 'Ada Fashion', language: 'pt-BR', currency: 'XOF' });
@@ -344,7 +360,7 @@ const Settings = () => {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-rose-50 rounded-xl p-1 overflow-x-auto">
-        {tabs.map(tab => (
+        {allowedTabs.map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === tab ? 'bg-white text-rose-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'

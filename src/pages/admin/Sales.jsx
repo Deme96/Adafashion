@@ -8,6 +8,7 @@ import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import PrintDateModal from '../../components/ui/PrintDateModal';
+import { hasPermission } from '../../lib/auth';
 
 const Sales = () => {
   const [orders, setOrders] = useState([]);
@@ -192,6 +193,7 @@ const Sales = () => {
             <Printer size={16} />
             Imprimir
           </button>
+          {hasPermission('sales.create') && (
           <button
             onClick={() => {
               setNewSale({ customer_name: '', customer_email: '', payment_method: 'Orange Money', product_id: '', quantity: 1, total: 0 });
@@ -202,6 +204,7 @@ const Sales = () => {
             <Plus size={16} />
             Nova Venda
           </button>
+          )}
         </div>
       </div>
 
@@ -322,7 +325,7 @@ const Sales = () => {
                     <button onClick={() => setSelectedOrder(order)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors" title="Ver Detalhes">
                       <Eye size={16} />
                     </button>
-                    {order.status !== 'Entregue' && order.status !== 'Cancelado' && (
+                    {hasPermission('sales.edit') && order.status !== 'Entregue' && order.status !== 'Cancelado' && (
                         <button
                           onClick={() => updateStatus(order.id, 'Entregue')}
                           className="p-2 rounded-lg hover:bg-green-100 text-gray-400 hover:text-green-700 transition-colors"
@@ -331,7 +334,7 @@ const Sales = () => {
                           <CheckCircle size={16} />
                         </button>
                     )}
-                    {order.status !== 'Cancelado' && (
+                    {hasPermission('sales.delete') && order.status !== 'Cancelado' && (
                         <button
                           onClick={() => { if(confirm('Tem certeza que deseja anular esta venda?')) updateStatus(order.id, 'Cancelado'); }}
                           className="p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-700 transition-colors"

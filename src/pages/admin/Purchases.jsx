@@ -7,6 +7,7 @@ import StatsCard from '../../components/admin/StatsCard';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { hasPermission } from '../../lib/auth';
 
 const emptyProduct = { 
   name: '', 
@@ -214,9 +215,11 @@ const Purchases = () => {
           <h1 className="font-fashion text-3xl font-bold text-rose-500 tracking-tight">Loja & Produtos</h1>
           <p className="text-gray-500 text-sm mt-1">Registe as compras de stock e catálogo de produtos</p>
         </div>
+        {hasPermission('purchases.create') && (
         <button onClick={openNew} className="inline-flex items-center gap-2 bg-rose-400 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-500 transition-colors shadow-sm shadow-rose-400/20">
           <Plus size={16} /> Novo Produto / Compra
         </button>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-pink-100 flex flex-col md:flex-row gap-4">
@@ -313,8 +316,12 @@ const Purchases = () => {
                           </a>
                         )}
                         <button onClick={() => handleCheckStock(p)} className="p-2 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors" title="Verificar Estoque"><Eye size={15} /></button>
+                        {hasPermission('purchases.edit') && (
                         <button onClick={() => openEdit(p)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors" title="Editar"><Pencil size={15} /></button>
+                        )}
+                        {hasPermission('purchases.delete') && (
                         <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Eliminar"><Trash2 size={15} /></button>
+                        )}
                       </div>
                     </td>
                   </tr>

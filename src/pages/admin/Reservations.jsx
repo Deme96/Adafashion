@@ -8,6 +8,7 @@ import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import PrintDateModal from '../../components/ui/PrintDateModal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { hasPermission } from '../../lib/auth';
 
 const getDisplayId = (value) => String(value ?? '').slice(-6).toUpperCase();
 const getStatusValue = (value) => String(value ?? '').trim();
@@ -269,13 +270,17 @@ const Reservations = () => {
                       <button onClick={() => setSelectedOrder(order)} className="p-2 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors" title="Ver Detalhes">
                         <Eye size={16} />
                       </button>
+                      {hasPermission('reservations.edit') && (
                       <button onClick={() => { setSelectedOrder(order); setIsPaymentModalOpen(true); }} className="p-2 rounded-lg hover:bg-emerald-100 text-gray-400 hover:text-emerald-700 transition-colors" title="Registrar Pagamento">
                         <DollarSign size={16} />
                       </button>
+                      )}
 
+                      {hasPermission('reservations.delete') && (
                       <button onClick={() => confirmRemoveReservation(order)} className="p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors" title="Remover Reserva">
                         <Trash2 size={16} />
                       </button>
+                      )}
                     </td>
                   </tr>
                 ))}

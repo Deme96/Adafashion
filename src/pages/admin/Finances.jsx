@@ -12,6 +12,7 @@ import Modal from '../../components/ui/Modal';
 import PrintDateModal from '../../components/ui/PrintDateModal';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { Printer } from 'lucide-react';
+import { hasPermission } from '../../lib/auth';
 
 const COLORS = ['#be185d', '#ec4899', '#f472b6', '#f9a8d4', '#fce7f3'];
 const FINANCE_TABS = ['Resumo', 'Relatório Financeiro'];
@@ -401,7 +402,7 @@ const Finances = () => {
             >
               <Printer size={16} /> Imprimir
             </button>
-            {reportTab !== 'Movimentações de Caixa' && (
+            {reportTab !== 'Movimentações de Caixa' && hasPermission('finances.create_entry') && (
               <button onClick={openNew} className="inline-flex items-center gap-2 bg-rose-400 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-rose-500 transition-colors shadow-sm shadow-rose-400/20">
                 <Plus size={16} /> Novo Registro
               </button>
@@ -455,12 +456,16 @@ const Finances = () => {
                       {reportTab !== 'Movimentações de Caixa' && (
                         <td className="py-3 px-4 print-hide">
                           <div className="flex items-center justify-center gap-1">
+                            {hasPermission('finances.edit_entry') && (
                             <button onClick={() => openEdit(item)} className="p-1.5 rounded-lg hover:bg-rose-100 text-gray-400 hover:text-rose-700 transition-colors">
                               <Pencil size={14} />
                             </button>
+                            )}
+                            {hasPermission('finances.delete_entry') && (
                             <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors">
                               <Trash2 size={14} />
                             </button>
+                            )}
                           </div>
                         </td>
                       )}

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Package, AlertTriangle, ArrowUpRight, ArrowDownRight, Warehouse, Search } from 'lucide-react';
 import api from '../../lib/api';
 import Badge from '../../components/ui/Badge';
+import { hasPermission } from '../../lib/auth';
 
 const Stock = () => {
   const [products, setProducts] = useState([]);
@@ -84,7 +85,7 @@ const Stock = () => {
       </div>
 
       {/* Alerts Section */}
-      {criticalItems.length > 0 && (
+      {hasPermission('inventory.view') && criticalItems.length > 0 && (
         <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex gap-4 items-start">
           <div className="bg-red-100 text-red-600 p-2 rounded-xl shrink-0">
             <AlertTriangle size={24} />
@@ -99,6 +100,7 @@ const Stock = () => {
       )}
 
       {/* KPI Cards */}
+      {hasPermission('inventory.view') && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center gap-3 text-gray-500 mb-2">
@@ -162,6 +164,7 @@ const Stock = () => {
       </div>
 
       {/* Flow Table */}
+      {hasPermission('inventory.view') && (
       <div className="bg-white rounded-2xl border border-pink-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -225,6 +228,7 @@ const Stock = () => {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 };
