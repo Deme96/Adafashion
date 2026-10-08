@@ -186,6 +186,7 @@ const Sales = () => {
           <p className="text-gray-500 text-sm mt-1">Gerencie as compras online e vendas manuais</p>
         </div>
         <div className="flex items-center gap-3 print-hide">
+          {hasPermission('sales.print') && (
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
@@ -193,6 +194,7 @@ const Sales = () => {
             <Printer size={16} />
             Imprimir
           </button>
+          )}
           {hasPermission('sales.create') && (
           <button
             onClick={() => {
@@ -209,6 +211,7 @@ const Sales = () => {
       </div>
 
       {/* Filters (Hidden in print) */}
+      {hasPermission('sales.filter') && (
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-pink-100 flex flex-col md:flex-row gap-4 print-hide">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -248,13 +251,17 @@ const Sales = () => {
           </select>
         </div>
       </div>
+      )}
 
+      {hasPermission('sales.view_kpis') && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print-hide">
         <StatsCard icon={ShoppingBag} label="Vendas Ativas" value={validOrders.length} color="green" />
         <StatsCard icon={DollarSign} label="Receita Estimada" value={formatCurrency(totalRevenue)} color="blue" />
       </div>
+      )}
 
       {/* Items by Category Stats */}
+      {hasPermission('sales.view_categories') && (
       <div className="bg-white rounded-2xl border border-pink-100 p-5 print-hide shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -277,6 +284,7 @@ const Sales = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Print Area — only this block prints */}
       <div className="print-area">
