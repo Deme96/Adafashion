@@ -301,12 +301,12 @@ export const hasAccess = (allowedRolesOrMenuKey = []) => {
   const userRole = normalizeRole(user.role);
 
   if (typeof allowedRolesOrMenuKey === 'string') {
-    return canAccessMenu(allowedRolesOrMenuKey, user);
+    return canAccessMenu(allowedRolesOrMenuKey, user) || normalizeRole(allowedRolesOrMenuKey) === userRole;
   }
 
   if (Array.isArray(allowedRolesOrMenuKey)) {
     return allowedRolesOrMenuKey.some((item) => {
-      return canAccessMenu(item, user);
+      return canAccessMenu(item, user) || normalizeRole(item) === userRole;
     });
   }
 

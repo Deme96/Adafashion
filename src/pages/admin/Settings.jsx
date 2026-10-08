@@ -126,10 +126,10 @@ const Settings = () => {
   const toggleMenuPermissions = (menuObj) => {
     const current = form.permissions || [];
     const menuFeatureKeys = [menuObj.key, ...menuObj.features.map(f => f.key)];
-    const allChecked = menuFeatureKeys.every(k => current.includes(k));
+    const isAnyChecked = current.includes(menuObj.key) || menuObj.features.some(f => current.includes(f.key));
 
     let updated;
-    if (allChecked) {
+    if (isAnyChecked) {
       updated = current.filter(k => !menuFeatureKeys.includes(k));
     } else {
       updated = Array.from(new Set([...current, ...menuFeatureKeys]));
