@@ -134,6 +134,7 @@ const Stock = () => {
           <p className="text-3xl font-bold text-red-700">{outOfStockCount}</p>
         </div>
       </div>
+      )}
 
       {/* Filters & Search */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-pink-100 flex flex-col md:flex-row gap-4">
